@@ -10,7 +10,8 @@ const Lessons       = lazy(() => import("./pages/Lessons.jsx"));
 const Boarding      = lazy(() => import("./pages/Boarding.jsx"));
 const StableProfile = lazy(() => import("./pages/StableProfile.jsx"));
 const UserProfile   = lazy(() => import("./pages/UserProfile.jsx"));
-
+const UserSignUp    = lazy(() => import("./pages/UserSignUp.jsx"));
+const StableSignUp  = lazy(() => import("./pages/StableSignUp.jsx"));
 
 function Fallback() {
   return (
@@ -35,6 +36,8 @@ export default function App() {
               <Route path="/boarding" element={<Boarding />} />
               <Route path="/stables/:id" element={<StableProfile />} />
               <Route path="/profile" element={<UserProfile />} />
+              <Route path="/userSignUp" element={<UserSignUp/>} />
+              <Route path="/stableSignUp" element={<StableSignUp/>} />
               <Route path="*" element={<div>Not found</div>} />
             </Routes>
           </Suspense>

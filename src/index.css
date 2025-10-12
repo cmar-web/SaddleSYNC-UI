@@ -1,12 +1,14 @@
-
+/* root vars */
 :root {
+  --bg: #f7f7f8;
+  --text: #1f2937;
+  --muted: #f0f2f5;
+  --brand: #1c5917;
+  --ring: #34aa43;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -14,28 +16,28 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* global resets */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* fonts */
+h1 { font-size: 3.2em; line-height: 1.1; color:#205712;}
+
+/* links */
 a {
   font-weight: 500;
   color: #205712;
-  text-decoration: inherit;
+  text-decoration: none;
 }
-a:hover {
-  color: #115711;
-}
+a:hover { color: #11680e; }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
+/* buttons */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -43,60 +45,30 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #f9f9f9;
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
-  border-color: #0d6620;
-}
+button:hover { border-color: #0d6620; }
 button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
+button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #214723;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #11680e;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
-
-:root {
-  --bg: #f7f7f8;
-  --text: #1f2937;
-  --muted: #f0f2f5;
-  --brand: #111827;
-  --ring: #34aa43;
-}
-
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; }
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
-  background: var(--bg);
-  color: var(--text);
-}
-
+/* layout helpers */
 .container { max-width: 72rem; margin: 0 auto; padding: 1rem; }
-
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 .main { flex: 1; }
 
-/* navigation bar*/
+/* navigation bar */
 .nav-header { border-bottom: 1px solid #e5e7eb; background: #fff; }
-.nav { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; justify-content: space-between}
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  justify-content: space-between;
+}
 .brand { font-size: 1.25rem; font-weight: 700; color: var(--brand); text-decoration: none; }
 .links { display: flex; gap: .25rem; }
-
 .link {
   padding: .5rem .75rem;
   border-radius: .5rem;
@@ -104,18 +76,25 @@ body {
   color: inherit;
 }
 .link:hover { background: var(--muted); }
-.link:focus {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-}
-.link.active {
-  background: var(--muted);
-  font-weight: 600;
-}
+.link:focus { outline: 2px solid var(--ring); outline-offset: 2px; }
+.link.active { background: var(--muted); font-weight: 600; }
+
+.logo { width: 50px; height: 50px; object-fit: contain; display: block; }
 
 /* utilities */
-.card {
-  background: #fff; border: 1px solid #e5e7eb; border-radius: .75rem; padding: 1rem;
-}
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: .75rem; padding: 1rem; }
 .skeleton { background: #e5e7eb; border-radius: .5rem; animation: pulse 1.4s infinite ease-in-out; }
-@keyframes pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+@keyframes pulse { 0%, 100% { opacity: .6 } 50% { opacity: 1 } }
+
+/* dark mode vars */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111213;
+    --text: #e5e7eb;
+    --muted: #1f2937;
+    --brand: #f3f4f6;
+  }
+  .nav-header { background: #0f1113; border-bottom-color: #1f2937; }
+  .card { background: #0f1113; border-color: #1f2937; }
+  .skeleton { background: #374151; }
+}
