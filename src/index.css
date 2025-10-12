@@ -1,3 +1,4 @@
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -15,11 +16,11 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #205712;
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: #115711;
 }
 
 body {
@@ -47,7 +48,7 @@ button {
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: #0d6620;
 }
 button:focus,
 button:focus-visible {
@@ -56,13 +57,65 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
+    color: #214723;
     background-color: #ffffff;
   }
   a:hover {
-    color: #747bff;
+    color: #11680e;
   }
   button {
     background-color: #f9f9f9;
   }
 }
+
+
+:root {
+  --bg: #f7f7f8;
+  --text: #1f2937;
+  --muted: #f0f2f5;
+  --brand: #111827;
+  --ring: #34aa43;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: var(--bg);
+  color: var(--text);
+}
+
+.container { max-width: 72rem; margin: 0 auto; padding: 1rem; }
+
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.main { flex: 1; }
+
+/* navigation bar*/
+.nav-header { border-bottom: 1px solid #e5e7eb; background: #fff; }
+.nav { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; justify-content: space-between}
+.brand { font-size: 1.25rem; font-weight: 700; color: var(--brand); text-decoration: none; }
+.links { display: flex; gap: .25rem; }
+
+.link {
+  padding: .5rem .75rem;
+  border-radius: .5rem;
+  text-decoration: none;
+  color: inherit;
+}
+.link:hover { background: var(--muted); }
+.link:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.link.active {
+  background: var(--muted);
+  font-weight: 600;
+}
+
+/* utilities */
+.card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: .75rem; padding: 1rem;
+}
+.skeleton { background: #e5e7eb; border-radius: .5rem; animation: pulse 1.4s infinite ease-in-out; }
+@keyframes pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
