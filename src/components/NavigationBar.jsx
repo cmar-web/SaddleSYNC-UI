@@ -1,24 +1,27 @@
-// navigationbar.jsx
-import { NavLink } from "react-router-dom";
-
+// src/components/NavigationBar.jsx
+import { Link, NavLink } from "react-router-dom";
+import logo from "../assets/saddlesynclogo.png";
 
 export default function NavigationBar() {
-  const linkClass = ({ isActive }) => isActive ? "link active" : "link";
-
   return (
-    <header className="nav-header">
+    <header className="nav-header nav-green">
       <nav className="nav container">
-        <img src="../../src/assets/saddlesynclogo.png" alt="SaddleSync" className="logo" />
-        <NavLink to="/" className="brand">SADDLE SYNC</NavLink>
-        <div className="links">
-          <NavLink to="/search" className={linkClass}>Nearby Stables</NavLink>
-          <NavLink to="/lessons" className={linkClass}>Find Lessons</NavLink>
-          <NavLink to="/boarding" className={linkClass}>Find Boarding</NavLink>
-          <NavLink to="/userSignUp" className={linkClass}>Login/Sign Up</NavLink>
+        {/* left  */}
+        <Link to="/" className="brand brand--light">
+          <img src={logo} alt="SADDLESYNC" className="logo" />
+          <span className="brand-text">SADDLESYNC</span>
+        </Link>
+
+        {/* right*/}
+        <div className="actions">
+          <NavLink to="/userSignUp" className="btn btn-light">Sign up</NavLink>
+          <NavLink to="/userSignUp" className="btn btn-light btn-strong">Login</NavLink>
+          <NavLink to="/search" className="cta-nav">
+            <span>Find Nearby Stables</span>
+            <span className="arrow">→</span>
+          </NavLink>
         </div>
       </nav>
     </header>
   );
 }
-
-
