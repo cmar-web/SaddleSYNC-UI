@@ -94,6 +94,31 @@ body {
   .brand--light .brand-text { color:#f0f4f8; }
 }
 
+/* user badge */
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .45rem .65rem;
+  border-radius: .6rem;
+  text-decoration: none;
+  color: #fff;
+  background: rgba(0,0,0,.15);
+  border: 1px solid rgba(0,0,0,.55);
+  font-weight: 600;
+  max-width: 240px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.user-badge:hover { background: rgba(0,0,0,.22); }
+.user-badge__label { opacity: .9; }
+.user-badge__name { font-weight: 800; }
+
+/* hide badge on narrow screens  */
+@media (max-width: 560px) {
+  .user-badge { display: none; }
+}
 /*  Landing   */
 .landing { padding-block: 2.5rem 3rem; }
 
