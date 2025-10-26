@@ -15,7 +15,7 @@ export default function NavigationBar() {
         {/* right*/}
         <div className="actions">
           <NavLink to="/userSignUp" className="btn btn-light">Sign up</NavLink>
-          <NavLink to="/userSignUp" className="btn btn-light btn-strong">Login</NavLink>
+          <NavLink to="/login" className="btn btn-light btn-strong">Login</NavLink>
           <NavLink to="/search" className="cta-nav">
             <span>Find Nearby Stables</span>
             <span className="arrow">→</span>

@@ -1,28 +1,27 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { setCurrentUser } from "../lib/auth";
 
 const isEmail = (s) => /\S+@\S+\.\S+/.test(s || "");
-// options fo r level dropdown
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
 
 export default function UserSignUp() {
   const API = (import.meta.env.VITE_API_URL || "") + "/api/users";
+  const navigate = useNavigate();
 
   const [username, setUsername]   = useState("");
   const [password, setPassword]   = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName]   = useState("");
   const [email, setEmail]         = useState("");
-  const [level, setLevel]         = useState(""); 
+  const [level, setLevel]         = useState("");
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [ok, setOk] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
-    setOk(false);
 
     if (!username.trim()) return setError("Username is required.");
     if (!password.trim()) return setError("Password is required.");
@@ -44,11 +43,13 @@ export default function UserSignUp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!r.ok) throw new Error(await r.text() || "Create failed");
+      if (!r.ok) throw new Error((await r.text()) || "Create failed");
 
-      setOk(true);
-      setUsername(""); setPassword("");
-      setFirstName(""); setLastName(""); setEmail(""); setLevel("");
+      const created = await r.json();
+      setCurrentUser(created);
+
+      // nav to profile
+      navigate("/profile", { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -64,7 +65,9 @@ export default function UserSignUp() {
       <form onSubmit={onSubmit} className="card form-card" noValidate>
         <div className="form-grid">
           <div className="form-row">
-            <label htmlFor="username" className="label">Username <span className="req">*</span></label>
+            <label htmlFor="username" className="label">
+              Username <span className="req">*</span>
+            </label>
             <input
               id="username"
               className="input"
@@ -77,7 +80,9 @@ export default function UserSignUp() {
           </div>
 
           <div className="form-row">
-            <label htmlFor="password" className="label">Password <span className="req">*</span></label>
+            <label htmlFor="password" className="label">
+              Password <span className="req">*</span>
+            </label>
             <input
               id="password"
               className="input"
@@ -121,7 +126,7 @@ export default function UserSignUp() {
               id="email"
               className="input"
               type="email"
-              placeholder="Enter your email..."
+              placeholder="Enter email..."
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
@@ -148,13 +153,12 @@ export default function UserSignUp() {
               {submitting ? "Creating…" : "Sign up"}
             </button>
             {error && <div className="form-error" role="alert">{error}</div>}
-            {ok && <div className="form-success" role="status">Account created!</div>}
           </div>
         </div>
       </form>
 
       <p className="form-note">
-        Are you a stable owner? <Link to="/stableSignUp">Create a stable account</Link>.
+        Already have an account? <Link to="/login">Log in</Link>.
       </p>
     </section>
   );
