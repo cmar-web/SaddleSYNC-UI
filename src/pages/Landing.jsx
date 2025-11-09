@@ -1,4 +1,3 @@
-// landing.jsx
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -7,25 +6,37 @@ export default function Landing() {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/stables?page=1&pageSize=6");
-      const json = await res.json();
-      setFeatured(json.data ?? []);
+      try {
+        const res = await fetch("/api/stables?page=1&pageSize=6");
+        const json = await res.json();
+        setFeatured(Array.isArray(json?.data) ? json.data : []);
+      } catch {
+        setFeatured([]);
+      }
     })();
   }, []);
 
   return (
-    <section>
-      <header style={{ marginBottom: 24 }}>
-        <h1>Saddle Sync</h1>
-        <p>Find nearby stables, lessons, and boarding services</p>
-        <div style={{ marginTop: 12 }}>
-          <Link className="link active" to="/search">Browse Nearby Stables</Link>
-          <Link className="link active" to="/stableSignUp">I'm a stable owner</Link>
+    <section className="landing">
+      {/* hero */}
+      <header className="hero">
+        <h1 className="hero-title">SADDLESYNC</h1>
+
+        {/* just decorative bars under the title */}
+        <div className="hero-bars" aria-hidden="true">
+          <span className="bar bar-1" />
+          <span className="bar bar-2" />
+          <span className="bar bar-3" />
+          <span className="bar bar-4" />
+        </div>
+
+        {/* navs for lessons, boarding, and stablesign up */}
+        <div className="hero-ctas">
+          <Link to="/lessons" className="btn-cta big">Find Riding Lessons</Link>
+          <Link to="/boarding" className="btn-cta big">Find Boarding Services</Link>
+          <Link to="/stableSignUp" className="btn-cta big">I’m a Stable Owner</Link>
         </div>
       </header>
     </section>
   );
 }
-
-
-
