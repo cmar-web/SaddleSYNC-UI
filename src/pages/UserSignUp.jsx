@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { setCurrentUser } from "../lib/auth";
+import { api } from "../lib/api";
+import { setSession } from "../lib/auth";
 
 const isEmail = (s) => /\S+@\S+\.\S+/.test(s || "");
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
 
 export default function UserSignUp() {
-  const API = (import.meta.env.VITE_API_URL || "") + "/api/users";
   const navigate = useNavigate();
 
   const [username, setUsername]   = useState("");
@@ -15,6 +15,7 @@ export default function UserSignUp() {
   const [lastName, setLastName]   = useState("");
   const [email, setEmail]         = useState("");
   const [level, setLevel]         = useState("");
+  const [stableOwner, setStableOwner] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -34,21 +35,16 @@ export default function UserSignUp() {
       ...(lastName.trim()  ? { lastName: lastName.trim() }   : {}),
       ...(email.trim()     ? { email: email.trim() }         : {}),
       ...(level.trim()     ? { level: level.trim() }         : {}),
+      stableOwner, // <-- NEW
     };
 
     setSubmitting(true);
     try {
-      const r = await fetch(API, {
+      const { user, token } = await api("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!r.ok) throw new Error((await r.text()) || "Create failed");
-
-      const created = await r.json();
-      setCurrentUser(created);
-
-      // nav to profile
+      setSession({ user, token });
       navigate("/profile", { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong");
@@ -146,6 +142,20 @@ export default function UserSignUp() {
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
+          </div>
+
+          {/* stableowner toggle */}
+          <div className="form-row">
+            <label className="label" htmlFor="stableOwner">Stable owner</label>
+            <label className="switch">
+              <input
+                id="stableOwner"
+                type="checkbox"
+                checked={stableOwner}
+                onChange={(e) => setStableOwner(e.target.checked)}
+              />
+              <span className="slider" />
+            </label>
           </div>
 
           <div className="form-actions">

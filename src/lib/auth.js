@@ -1,41 +1,31 @@
 // src/lib/auth.js
-
-const KEY = "ss_current_user";
+const KEY_USER = "ss_current_user";
+const KEY_TOKEN = "ss_auth_token";
 export const AUTH_EVENT = "auth:changed";
 
-/** save the logged-in user and notify the app */
-export function setCurrentUser(user) {
+export function setSession({ user, token }) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(user));
-  } catch {}
-  // make current tab rerender listeners
-  try {
+    if (user) localStorage.setItem(KEY_USER, JSON.stringify(user));
+    if (token) localStorage.setItem(KEY_TOKEN, token);
     window.dispatchEvent(new Event(AUTH_EVENT));
   } catch {}
 }
 
-/** get the current user from storage or null if not logged in */
 export function getCurrentUser() {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY_USER);
     return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-/** clear current usr and notify app */
-export function clearCurrentUser() {
+export function getAuthToken() {
+  try { return localStorage.getItem(KEY_TOKEN) || null; } catch { return null; }
+}
+
+export function clearSession() {
   try {
-    localStorage.removeItem(KEY);
-  } catch {}
-  try {
+    localStorage.removeItem(KEY_USER);
+    localStorage.removeItem(KEY_TOKEN);
     window.dispatchEvent(new Event(AUTH_EVENT));
   } catch {}
-}
-
-/** headers with the dev auth user id if avail */
-export function authHeaders(extra = {}) {
-  const u = getCurrentUser();
-  return u?.UserID ? { ...extra, "x-user-id": String(u.UserID) } : { ...extra };
 }
