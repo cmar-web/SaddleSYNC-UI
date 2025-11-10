@@ -219,7 +219,6 @@ export default function StableProfile() {
               />
               {avatarBlobID && (
                 <button className="sp-avatar-remove" type="button" onClick={() => remove("avatar")} aria-label="Remove avatar">
-                  ✕
                 </button>
               )}
             </div>

@@ -18,7 +18,7 @@
 /* top bar */
 .search-layout{background:var(--green-100);min-height:100vh;}
 .search-topbar{height:56px;background:var(--green-700);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;}
-.search-topbar .title{font-weight:700;letter-spacing:.2px;font-size:18px}
+.search-topbar .title{font-weight:700;letter-spacing:.2px;font-size:18px;color:g--green-100}
 
 /* grid */
 .container{max-width:1100px;margin:0 auto;padding:0 16px;}

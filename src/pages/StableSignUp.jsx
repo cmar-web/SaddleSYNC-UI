@@ -2,6 +2,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { getCurrentUser } from "../lib/auth";
+import "../styles/stableSignUp.css";
 
 const STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA",

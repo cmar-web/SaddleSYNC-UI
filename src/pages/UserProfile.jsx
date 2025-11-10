@@ -43,7 +43,7 @@ export default function Profile() {
           LastName: me.LastName || "",
           Email: me.Email || "",
           Level: me.Level || "",
-          StableOwner: !!(me.StableOwner ?? false),
+          StableOwner: me.StableOwner || false
         }));
 
         // stables
@@ -228,7 +228,7 @@ export default function Profile() {
           <EmptyState
             title="No horses added"
             body="Add a horse profile to manage care notes, boarding, and lessons."
-            cta={<Link to="/horses/new" className="btn-primary">Add horse</Link>}
+            cta={<Link to="/createHorse" className="btn-primary">Add horse</Link>}
           />
         ) : (
           <ul className="card-grid">
