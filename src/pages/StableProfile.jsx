@@ -249,7 +249,7 @@ export default function StableProfile() {
 
             <div className="sp-cta-row">
               <Link className="sp-btn sp-btn-brown sp-btn-big" to="/lessons">Riding Lessons</Link>
-              <Link className="sp-btn sp-btn-brown sp-btn-big" to="/boarding">Boarding Services</Link>
+              <Link className="sp-btn sp-btn-brown sp-btn-big" to="/boardingInfo">Boarding Services</Link>
             </div>
 
             <div className="sp-card">

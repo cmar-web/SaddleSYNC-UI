@@ -6,6 +6,8 @@ import "../styles/profile.css";
 
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
 
+const toBool = (v) => v === true || v === 1 || v === "1" || v === "true";
+
 export default function Profile() {
   const [form, setForm] = useState({
     UserID: null,
@@ -43,7 +45,7 @@ export default function Profile() {
           LastName: me.LastName || "",
           Email: me.Email || "",
           Level: me.Level || "",
-          StableOwner: me.StableOwner || false
+          StableOwner: toBool(me.StableOwner)
         }));
 
         // stables
@@ -82,9 +84,9 @@ export default function Profile() {
         LastName: form.LastName,
         Email: form.Email,
         Level: form.Level || null,
-        StableOwner: !!form.StableOwner,
+        StableOwner: toBool(form.StableOwner) ? 1 : 0,
       };
-      const endpoint = "/api/users/me";
+      const endpoint = "/api/users/:id";
       await api(endpoint, { method: "PATCH", body: JSON.stringify(payload) });
     } catch (e) {
       setErr(e.message || "Save failed");

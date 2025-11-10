@@ -1,0 +1,232 @@
+:root {
+  --bg-olive: #6c7e54;
+  --bg-olive-dark: #4f5f3a;
+  --panel: #f3f3ef;
+  --panel-2: #ffffff;
+  --ink: #233018;
+  --muted: #5a6a4a;
+  --accent: #8b4d2f;
+  --accent-2: #b8744f;
+  --ring: #d5d9cc;
+  --shadow: 0 8px 24px rgba(0,0,0,.12);
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; }
+
+.boarding-shell {
+  min-height: 100vh;
+  background: var(--bg-olive);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+}
+
+.boarding-header {
+  height: 56px;
+  background: var(--bg-olive-dark);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.brand-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: url('/logo192.png') center/cover, #eee;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.3);
+}
+
+.boarding-content {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  padding: 20px;
+}
+
+.booking-content {
+  display: grid;
+  grid-template-columns: 1.2fr .9fr;
+  gap: 20px;
+  padding: 20px;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  border: 1px solid var(--ring);
+}
+
+.services h2,
+.pricing h2,
+.form-side h2 { 
+  margin: 0 0 12px 0;
+  color: var(--ink);
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+}
+
+.services-col .muted {
+  margin: 6px 0 10px 2px;
+  color: var(--muted);
+}
+
+.card {
+  background: var(--panel-2);
+  border-radius: 12px;
+  border: 1px solid var(--ring);
+  padding: 14px 16px;
+}
+
+.card h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+.bullets {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+.pricing {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.deposit-pill {
+  align-self: center;
+  background: #e9f3e3;
+  border: 1px dashed var(--muted);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.price-list {
+  list-style: none;
+  margin: 0 0 16px 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.price-list li {
+  display: flex;
+  justify-content: space-between;
+  background: var(--panel-2);
+  border: 1px solid var(--ring);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  transition: transform .06s ease;
+}
+
+.cta:hover { transform: translateY(-1px); }
+.cta.wide { width: 100%; }
+
+.form-side .booking-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.row { display: grid; gap: 12px; }
+.row.two { grid-template-columns: 1fr 1fr; }
+
+.field { display: grid; gap: 6px; }
+
+label { font-size: 13px; color: var(--muted); }
+.label-inline { margin-bottom: 6px; }
+
+input, select, textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--ring);
+  background: var(--panel-2);
+  padding: 10px 12px;
+  outline: none;
+}
+
+.horse-select {
+  display: grid;
+  grid-template-columns: 1fr 40px;
+  gap: 8px;
+}
+
+.icon-btn {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--ring);
+  background: var(--panel-2);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-side { display: flex; flex-direction: column; gap: 12px; }
+.calendar-head { display: flex; align-items: center; justify-content: space-between; }
+.calendar-head h3 { margin: 0; }
+
+.calendar {
+  background: var(--panel-2);
+  border: 1px solid var(--ring);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-grid .date,
+.cal-grid .empty {
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.cal-grid .date { background: #f8f8f5; border-color: #eceee7; }
+.cal-grid .date.selected { background: #2f6c3d; color: #fff; border-color: #2f6c3d; }
+.cal-grid .date.range { background: #cfe2d1; border-color: #cfe2d1; }
+
+.calendar-help {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}

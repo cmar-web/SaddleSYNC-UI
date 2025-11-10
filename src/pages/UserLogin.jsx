@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { setSession } from "../lib/auth";
 import { api } from "../lib/api";
-import "../styles/auth.css"
+import "../styles/userLogin.css";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -32,31 +32,23 @@ export default function Login() {
   }
 
   return (
-    <main className="auth-page">
-      <section className="auth-card" role="form" aria-labelledby="login-title">
-        <header className="auth-header">
-          <div className="auth-logo" aria-hidden>🐎</div>
-          <div>
-            <h1 id="login-title">Welcome back</h1>
-            <p className="muted">Log in to continue to your account</p>
-          </div>
-        </header>
+    <section className="container auth">
+      <h1 className="auth-title">Welcome back</h1>
+      <p className="auth-subtitle">Log in to continue</p>
 
-        {error ? (
-          <div className="auth-alert" role="alert">
-            {error}
-          </div>
-        ) : null}
+      <form className="card form-card" onSubmit={onSubmit} noValidate>
+        <div className="form-grid">
+          {error && <div className="form-error" role="alert">{error}</div>}
 
-        <form onSubmit={onSubmit} className="auth-form">
-          <div className="field">
-            <label htmlFor="username">Username</label>
+          <div className="form-row">
+            <label htmlFor="username" className="label">Username</label>
             <input
               id="username"
+              className="input"
               type="text"
               inputMode="text"
               autoComplete="username"
-              placeholder="Enter your username"
+              placeholder="Enter username..."
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={loading}
@@ -64,11 +56,12 @@ export default function Login() {
             />
           </div>
 
-          <div className="field">
-            <label htmlFor="password">Password</label>
+          <div className="form-row">
+            <label htmlFor="password" className="label">Password</label>
             <div className="password-wrap">
               <input
                 id="password"
+                className="input"
                 type={showPass ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="••••••••"
@@ -82,7 +75,6 @@ export default function Login() {
                 className="ghost-btn"
                 aria-label={showPass ? "Hide password" : "Show password"}
                 onClick={() => setShowPass((s) => !s)}
-                tabIndex={0}
               >
                 {showPass ? "Hide" : "Show"}
               </button>
@@ -93,26 +85,23 @@ export default function Login() {
             <label className="checkbox">
               <input type="checkbox" disabled={loading} /> Remember me
             </label>
-            <Link to="/forgot" className="link">
-              Forgot password?
-            </Link>
+            <Link to="/forgot" className="link-strong">Forgot password?</Link>
           </div>
 
-          <button
-            className="primary-btn"
-            disabled={loading || !username || !password}
-          >
-            {loading ? "Logging in…" : "Log in"}
-          </button>
-        </form>
+          <div className="form-actions">
+            <button
+              className="btn-brown"
+              disabled={loading || !username || !password}
+            >
+              {loading ? "Logging in…" : "Log in"}
+            </button>
+          </div>
+        </div>
+      </form>
 
-        <footer className="auth-footer">
-          <span className="muted">Need an account?</span>{" "}
-          <Link to="/userSignUp" className="link-strong">
-            Sign up
-          </Link>
-        </footer>
-      </section>
-    </main>
+      <p className="form-note">
+        Need an account? <Link to="/userSignUp">Sign up</Link>.
+      </p>
+    </section>
   );
 }
