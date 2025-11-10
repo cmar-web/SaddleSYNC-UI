@@ -9,9 +9,9 @@ export default function Search() {
   const [params, setParams] = useSearchParams();
   const [stables, setStables] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(null); // if API returns a total count
+  const [total, setTotal] = useState(null); 
 
-  // URL state
+
   const near = params.get("near") || "Erie, PA";
   const offers = (params.get("offers") || "Lessons,Boarding")
     .split(",")
@@ -49,11 +49,10 @@ export default function Search() {
       }
     })();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [near, offers.join(","), params.get("page"), params.get("pageSize")]);
 
   const filtered = useMemo(() => {
-    // Client-side filter is defensive; ideally the API already filters by offers.
+
     return stables.filter(s =>
       (offers.includes("Lessons") ? s?.offers?.includes("Lessons") : true) &&
       (offers.includes("Boarding") ? s?.offers?.includes("Boarding") : true)
