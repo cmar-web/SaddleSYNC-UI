@@ -8,12 +8,13 @@ const Landing       = lazy(() => import("./pages/Landing.jsx"));
 const Search        = lazy(() => import("./pages/Search.jsx"));
 const Lessons       = lazy(() => import("./pages/Lessons.jsx"));
 const Boarding      = lazy(() => import("./pages/Boarding.jsx"));
+const BoardingInfo  = lazy(() => import("./pages/BoardingInfo.jsx"));
 const StableProfile = lazy(() => import("./pages/StableProfile.jsx"));
 const UserProfile   = lazy(() => import("./pages/UserProfile.jsx"));
 const UserSignUp    = lazy(() => import("./pages/UserSignUp.jsx"));
 const StableSignUp  = lazy(() => import("./pages/StableSignUp.jsx"));
 const Login         = lazy(() => import("./pages/UserLogin.jsx"));
-
+const CreateHorse   = lazy(() => import("./pages/CreateHorse.jsx"));
 
 
 function Fallback() {
@@ -42,6 +43,8 @@ export default function App() {
               <Route path="/userSignUp" element={<UserSignUp/>} />
               <Route path="/stableSignUp" element={<StableSignUp/>} />
               <Route path="/login" element={<Login/>}/>
+              <Route path="/createHorse" element={<CreateHorse/>}/>
+              <Route path="/boardingInfo" element={<BoardingInfo/>}/>
               <Route path="*" element={<div>Not found</div>} />
             </Routes>
           </Suspense>

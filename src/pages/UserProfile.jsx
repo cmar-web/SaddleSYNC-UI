@@ -1,236 +1,290 @@
+// src/pages/Profile.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getCurrentUser, setCurrentUser, clearCurrentUser } from "../lib/auth";
+import { api } from "../lib/api";
+import "../styles/profile.css";
 
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
 
-export default function UserProfile() {
-  const API = (import.meta.env.VITE_API_URL || "") + "/api";
+const toBool = (v) => v === true || v === 1 || v === "1" || v === "true";
+
+export default function Profile() {
+  const [form, setForm] = useState({
+    UserID: null,
+    Username: "",
+    FirstName: "",
+    LastName: "",
+    Email: "",
+    Level: "",
+    StableOwner: false, // bool toggle
+  });
+  const [stables, setStables] = useState([]);
+  const [horses, setHorses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
   const navigate = useNavigate();
 
-  // get current session
-  const sessionUser = useMemo(() => getCurrentUser(), []);
-  const userId = sessionUser?.UserID;
+  const initials = useMemo(() => {
+    const a = (form.FirstName || "").trim()[0] || "";
+    const b = (form.LastName || "").trim()[0] || "";
+    const fallback = (form.Username || "").trim()[0] || "?";
+    return (a + b || fallback).toUpperCase();
+  }, [form]);
 
-  // gate if not logged in
-  if (!userId) {
-    return (
-      <section className="container auth">
-        <h1 className="auth-title">Your profile</h1>
-        <div className="card" style={{ padding: "1rem" }}>
-          <p>You need to be logged in to view your profile.</p>
-          <p className="form-actions">
-            <Link className="btn-brown" to="/login">Log in</Link>
-            <Link className="btn btn-light" to="/userSignUp">Create an account</Link>
-          </p>
-        </div>
-      </section>
-    );
-  }
-
-  // form state
-  const [base, setBase] = useState(null); // server truth we compare against
-  const [username, setUsername]   = useState("");
-  const [password, setPassword]   = useState(""); // blank means "don’t change"
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName]   = useState("");
-  const [email, setEmail]         = useState("");
-  const [level, setLevel]         = useState("");
-
-  const [saving, setSaving] = useState(false);
-  const [ok, setOk] = useState(false);
-  const [error, setError] = useState("");
-
-  // owned stables
-  const [stables, setStables] = useState([]);
-  const [loadingStables, setLoadingStables] = useState(true);
-
-  // load latest user profile
   useEffect(() => {
-    let cancelled = false;
     (async () => {
       try {
-        const r = await fetch(`${API}/users/${userId}`);
-        const data = await r.json();
-        if (cancelled) return;
-        setBase(data);
-        setUsername(data.Username || "");
-        setFirstName(data.FirstName || "");
-        setLastName(data.LastName || "");
-        setEmail(data.Email || "");
-        setLevel(data.Level || "");
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [API, userId]);
+        //current user
+        const me = await api("/api/auth/me");
+        setForm(f => ({
+          ...f,
+          UserID: me.UserID,
+          Username: me.Username || "",
+          FirstName: me.FirstName || "",
+          LastName: me.LastName || "",
+          Email: me.Email || "",
+          Level: me.Level || "",
+          StableOwner: toBool(me.StableOwner)
+        }));
 
-  // load owned stables
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await fetch(`${API}/stables`);
-        const arr = await r.json();
-        if (cancelled) return;
-        const mine = Array.isArray(arr) ? arr.filter(s => s.OwnerID === userId) : [];
-        setStables(mine);
+        // stables
+        let stbs = [];
+        try {
+          stbs = await api("/api/stables?owner=me");
+        } catch {
+          const all = await api("/api/stables");
+          stbs = (all || []).filter(s => (s.OwnerID ?? s.ownerId) === me.UserID);
+        }
+        setStables(Array.isArray(stbs) ? stbs : []);
+
+        // horses
+        let hrs = [];
+        try {
+          hrs = await api("/api/horses?owner=me");
+        } catch {
+          hrs = await api(`/api/users/${me.UserID}/horses`);
+        }
+        setHorses(Array.isArray(hrs) ? hrs : []);
       } catch (e) {
-        console.error(e);
+        setErr(e.message || "Failed to load profile");
       } finally {
-        setLoadingStables(false);
+        setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
-  }, [API, userId]);
+  }, []);
 
   async function onSave(e) {
     e.preventDefault();
-    if (!base) return;
-    setError("");
-    setOk(false);
-
-    // Build a minimal diff payload; only send fields that changed.
-    const diff = {};
-    if (username.trim() !== (base.Username || "")) diff.username = username.trim();
-    if (password.trim()) diff.password = password; // only when provided
-    if (firstName !== (base.FirstName || "")) diff.firstName = firstName; // empty string clears to NULL (your controller handles it)
-    if (lastName  !== (base.LastName  || "")) diff.lastName  = lastName;
-    if (email     !== (base.Email     || "")) diff.email     = email;
-    if (level     !== (base.Level     || "")) diff.level     = level;
-
-    if (Object.keys(diff).length === 0) {
-      setOk(true);
-      return;
-    }
-
+    setErr("");
     setSaving(true);
     try {
-      // If your route uses PATCH instead, change method to 'PATCH'
-      const r = await fetch(`${API}/users/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(diff),
-      });
-      if (!r.ok) throw new Error((await r.text()) || "Update failed");
-      const updated = await r.json();
-      setBase(updated);
-      setPassword(""); // clear password field
-      setOk(true);
-
-      // keep session in sync (Navbar, etc.)
-      setCurrentUser(updated);
-    } catch (err) {
-      setError(err.message || "Update failed");
+      const payload = {
+        FirstName: form.FirstName,
+        LastName: form.LastName,
+        Email: form.Email,
+        Level: form.Level || null,
+        StableOwner: toBool(form.StableOwner) ? 1 : 0,
+      };
+      const endpoint = "/api/users/:id";
+      await api(endpoint, { method: "PATCH", body: JSON.stringify(payload) });
+    } catch (e) {
+      setErr(e.message || "Save failed");
     } finally {
       setSaving(false);
     }
   }
 
-  async function onDelete() {
-    const sure = window.confirm("Delete your account? This cannot be undone.");
-    if (!sure) return;
-    try {
-      const r = await fetch(`${API}/users/${userId}`, { method: "DELETE" });
-      if (r.status !== 204 && !r.ok) {
-        throw new Error((await r.text()) || "Delete failed");
-      }
-      clearCurrentUser();
-      navigate("/", { replace: true });
-    } catch (err) {
-      alert(err.message || "Delete failed");
-    }
+  if (loading) {
+    return (
+      <div className="profile-container">
+        <div className="skeleton header-skeleton" />
+        <div className="grid2">
+          <div className="skeleton card-skeleton" />
+          <div className="skeleton card-skeleton" />
+        </div>
+      </div>
+    );
   }
 
+  if (err) return <div className="form-error">{err}</div>;
+
   return (
-    <section className="container profile">
-      <h1 className="auth-title">Your profile</h1>
+    <div className="profile-container">
+      {/* header */}
+      <section className="profile-header">
+        <div className="avatar" aria-hidden>{initials}</div>
+        <div>
+          <h1 className="title">My profile</h1>
+          <p className="muted">@{form.Username}</p>
+        </div>
+      </section>
 
-      <div className="profile-grid">
-        {/* Profile form */}
-        <form className="card form-card" onSubmit={onSave} noValidate>
-          <h2 className="section-title">Account</h2>
-          <div className="form-grid">
-            <div className="form-row">
-              <label htmlFor="username" className="label">Username</label>
-              <input id="username" className="input" value={username}
-                     onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
-            </div>
-
-            <div className="form-row">
-              <label htmlFor="password" className="label">Password</label>
-              <input id="password" className="input" type="password" value={password}
-                     onChange={(e) => setPassword(e.target.value)} autoComplete="new-password"
-                     placeholder="Leave blank to keep current password" />
-            </div>
-
-            <div className="form-row cols-2">
-              <div>
-                <label htmlFor="firstName" className="label">First name</label>
-                <input id="firstName" className="input" value={firstName}
-                       onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" />
+      <div className="grid2">
+        {/* My Info */}
+        <section className="card">
+          <h2 className="section-title">My Info</h2>
+          <form onSubmit={onSave} className="profile-form">
+            <div className="row2">
+              <div className="field">
+                <label>First name</label>
+                <input
+                  value={form.FirstName}
+                  onChange={e => setForm(f => ({ ...f, FirstName: e.target.value }))}
+                />
               </div>
-              <div>
-                <label htmlFor="lastName" className="label">Last name</label>
-                <input id="lastName" className="input" value={lastName}
-                       onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
+              <div className="field">
+                <label>Last name</label>
+                <input
+                  value={form.LastName}
+                  onChange={e => setForm(f => ({ ...f, LastName: e.target.value }))}
+                />
               </div>
             </div>
 
-            <div className="form-row">
-              <label htmlFor="email" className="label">Email</label>
-              <input id="email" className="input" type="email" value={email}
-                     onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+            <div className="field">
+              <label>Email</label>
+              <input
+                type="email"
+                value={form.Email}
+                onChange={e => setForm(f => ({ ...f, Email: e.target.value }))}
+              />
             </div>
 
-            <div className="form-row">
-              <label htmlFor="level" className="label">Level</label>
-              <select id="level" className="input select" value={level}
-                      onChange={(e) => setLevel(e.target.value)}>
-                <option value="">Select level (optional)</option>
-                {LEVEL_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
+            <div className="row2">
+              <div className="field">
+                <label>Rider Level</label>
+                <select
+                  value={form.Level || ""}
+                  onChange={e => setForm(f => ({ ...f, Level: e.target.value }))}
+                >
+                  <option value="">Select level (optional)</option>
+                  {LEVEL_OPTIONS.map(v => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field toggle-field">
+                <label>Stable owner</label>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={!!form.StableOwner}
+                    onChange={e => setForm(f => ({ ...f, StableOwner: e.target.checked }))}
+                  />
+                  <span className="slider" />
+                </label>
+              </div>
             </div>
 
-            <div className="form-actions">
-              <button className="btn-brown" type="submit" disabled={saving}>
+            <div className="actions-right">
+              <button className="btn-primary" disabled={saving}>
                 {saving ? "Saving…" : "Save changes"}
               </button>
-              {ok && <div className="form-success" role="status">Saved!</div>}
-              {error && <div className="form-error" role="alert">{error}</div>}
             </div>
-          </div>
-        </form>
+          </form>
+        </section>
 
-        {/* Owned stables */}
-        <div className="card" style={{ padding: "1rem" }}>
-          <h2 className="section-title">Your stables</h2>
-          {loadingStables ? (
-            <div className="skeleton" style={{ height: 16, width: 180 }} />
-          ) : stables.length === 0 ? (
-            <>
-              <p>You don’t own any stables yet.</p>
-              <Link className="btn-brown" to="/stableSignUp">Create a stable</Link>
-            </>
-          ) : (
-            <div className="stable-list">
-              {stables.map(s => (
-                <Link key={s.StableID} to={`/stables/${s.StableID}`} className="stable-item">
-                  <div className="stable-name">{s.StableName}</div>
-                  <div className="stable-meta">
-                    {s.City}, {s.State} · #{s.StableID}
-                  </div>
-                </Link>
-              ))}
-              <div style={{ marginTop: ".75rem" }}>
-                <Link className="btn-brown" to="/stableSignUp">Create another stable</Link>
-              </div>
+        {/* my stables - uses toggle from stableowner bit in db*/}
+        {form.StableOwner && (
+          <section className="card">
+            <div className="section-head">
+              <h2 className="section-title">My Stables</h2>
+              <Link to="/stableSignUp" className="btn-ghost">+ Add stable</Link>
             </div>
-          )}
-        </div>
-  
+
+            {stables.length === 0 ? (
+              <EmptyState
+                title="No stables yet"
+                body="Create your first stable to manage listings, lessons, and boarding."
+                cta={<Link to="/stableSignUp" className="btn-primary">Create stable</Link>}
+              />
+            ) : (
+              <ul className="card-list">
+                {stables.map(s => (
+                  <li key={s.StableID ?? s.id} className="list-row">
+                    <div className="list-body">
+                      <div className="list-title">{s.StableName ?? s.name}</div>
+                      <div className="list-sub">{formatAddress(s)}</div>
+                    </div>
+                    <div className="list-actions">
+                      <Link to={`/stables/${s.StableID ?? s.id}`} className="btn-ghost">View</Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
       </div>
-    </section>
+
+      {/* My horses */}
+      <section className="card">
+        <div className="section-head">
+          <h2 className="section-title">My Horses</h2>
+          <Link to="/horses/new" className="btn-ghost">+ Add horse</Link>
+        </div>
+
+        {horses.length === 0 ? (
+          <EmptyState
+            title="No horses added"
+            body="Add a horse profile to manage care notes, boarding, and lessons."
+            cta={<Link to="/createHorse" className="btn-primary">Add horse</Link>}
+          />
+        ) : (
+          <ul className="card-grid">
+            {horses.map(h => (
+              <li key={h.HorseID ?? h.id} className="horse-card">
+                <div className="horse-avatar" aria-hidden>
+                  {(h.Name || "?")[0].toUpperCase()}
+                </div>
+                <div className="horse-body">
+                  <div className="horse-title">{h.Name}</div>
+                  <div className="horse-sub">
+                    {h.Breed ? h.Breed : "—"} {h.DOB ? `• DOB: ${formatDate(h.DOB)}` : ""}
+                  </div>
+                </div>
+                <div className="list-actions">
+                  <Link to={`/horses/${h.HorseID ?? h.id}`} className="btn-ghost">Open</Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* helpers */
+function formatAddress(s) {
+  const address = s.Address ?? s.address;
+  const city = s.City ?? s.city;
+  const state = s.State ?? s.state;
+  const zip = s.Zipcode ?? s.zip ?? s.zipcode;
+  if (!address && !city) return "—";
+  return [address, [city, state].filter(Boolean).join(", "), zip]
+    .filter(Boolean)
+    .join(" • ");
+}
+function formatDate(d) {
+  try {
+    const dt = new Date(d);
+    if (isNaN(+dt)) return d;
+    return dt.toLocaleDateString();
+  } catch { return d; }
+}
+
+function EmptyState({ title, body, cta }) {
+  return (
+    <div className="empty">
+      <div className="empty-icon" aria-hidden>🐴</div>
+      <div>
+        <div className="empty-title">{title}</div>
+        <div className="empty-body">{body}</div>
+      </div>
+      <div className="empty-cta">{cta}</div>
+    </div>
   );
 }

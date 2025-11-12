@@ -1,7 +1,8 @@
 // src/pages/StableSignUp.jsx
 import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { getCurrentUser, authHeaders } from "../lib/auth";
+import { getCurrentUser } from "../lib/auth";
+import "../styles/stableSignUp.css";
 
 const STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA",
@@ -43,7 +44,11 @@ export default function StableSignUp() {
   const [email, setEmail]           = useState(user?.Email || "");
 
   const [submitting, setSubmitting] = useState(false);
+  const [phase, setPhase] = useState(""); 
   const [error, setError] = useState("");
+
+  // helper: pretty joins zip5 and zip4
+  const formatZip = (zip5, zip4) => zip4 ? `${zip5}-${zip4}` : zip5;
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -57,42 +62,97 @@ export default function StableSignUp() {
     if (!zip.trim())        return setError("Zipcode is required.");
     if (!isEmail(email))    return setError("Valid email is required.");
 
-    // payload
-    const payload = {
-      StableName: stableName.trim(),
-      OwnerID: userId,
-      PhoneNumber: phone || null,
-      Address: address.trim(),
-      City: city.trim(),
-      State: stateVal.trim(),
-      Zipcode: zip.trim(),
-      Email: email.trim(),
-    };
-
     setSubmitting(true);
+
     try {
-      const r = await fetch(API, {
+      //validate, standardiz, geocode (server hits usps and locationiq)
+      setPhase("validating");
+      const validateRes = await fetch(`${API}/validate-address`, {
         method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          street1: address.trim(),
+          city: city.trim(),
+          state: stateVal.trim(),
+          zip: zip.trim(),
+        }),
       });
 
+      const validateData = await validateRes.json().catch(() => ({}));
+      if (!validateRes.ok) {
+        if (validateRes.status === 422) {
+          throw new Error(validateData.error || "That address is invalid. Please check it.");
+        }
+        throw new Error(validateData.error || "Address validation failed.");
+      }
+
+      // use standardized values from server
+      const std = validateData.address; 
+      const coords = validateData.coords;
+
+      //create stable
+      setPhase("creating");
+      const createPayload = {
+        StableName: stableName.trim(),
+        OwnerID: userId,
+        PhoneNumber: phone || null,
+        Address: `${std.street1}${std.street2 ? " " + std.street2 : ""}`,
+        City: std.city,
+        State: std.state,
+        Zipcode: formatZip(std.zip5, std.zip4),
+        Email: email.trim(),
+      };
+
+      const r = await fetch(API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+           Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,
+        },
+
+        body: JSON.stringify(createPayload),
+      });
+
+      let created;
       if (!r.ok) {
         let msg = "Create failed";
         try {
           const t = await r.text();
           msg = t || msg;
-  
           try { msg = JSON.parse(t).error || msg; } catch {}
+        } catch {}
+        throw new Error(msg);
+      } else {
+        created = await r.json();
+      }
+
+      setPhase("saving");
+      const saveRes = await fetch(`${API}/${created.StableID}/address`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,  
+      },
+
+        body: JSON.stringify({ address: std, coords }),
+      });
+
+      if (!saveRes.ok) {
+        let msg = "Saving address failed";
+        try {
+          const t = await saveRes.text();
+          msg = (JSON.parse(t).error) || t || msg;
         } catch {}
         throw new Error(msg);
       }
 
-      const created = await r.json(); //contains id from output
+      // go to stable profile page
       navigate(`/stables/${created.StableID}`, { replace: true });
+
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
+      setPhase("");
       setSubmitting(false);
     }
   }
@@ -201,7 +261,10 @@ export default function StableSignUp() {
 
           <div className="form-actions">
             <button className="btn-brown" type="submit" disabled={submitting}>
-              {submitting ? "Creating…" : "Create stable"}
+              {phase === "validating" ? "Validating…" :
+               phase === "creating"   ? "Creating…"   :
+               phase === "saving"     ? "Saving address…" :
+               "Create stable"}
             </button>
             {error && <div className="form-error" role="alert">{error}</div>}
           </div>

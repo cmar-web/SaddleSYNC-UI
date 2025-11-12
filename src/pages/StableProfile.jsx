@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../lib/auth";
+import "../styles/stableProfile.css";
 
 const STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
@@ -8,102 +9,88 @@ const STATES = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
 ];
 
-const toDataUrl = (file) =>
-  new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(String(r.result));
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
+const API = (import.meta.env.VITE_API_URL || "") + "/api";
 
 export default function StableProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const API = (import.meta.env.VITE_API_URL || "") + "/api";
-  const user = useMemo(() => getCurrentUser(), []);
-  const userId = user?.UserID;
 
-  const bannerKey   = `stable:${id}:banner`;
-  const avatarKey   = `stable:${id}:avatar`;
-  const aboutKey    = `stable:${id}:about`;
-  const notesKey    = `stable:${id}:notes`;
-  const horsesKey   = `stable:${id}:horses`;
+  const user = useMemo(() => {
+    try { return getCurrentUser() || null; } catch { return null; }
+  }, []);
+  const userId = user?.UserID ?? user?.userId ?? user?.id ?? null;
 
   const [loading, setLoading] = useState(true);
-  const [stable, setStable] = useState(null);
-  const [error, setError] = useState("");
+  const [stable, setStable]   = useState(null);
+  const [error, setError]     = useState("");
 
-  // form fields 
-  const [name, setName]       = useState("");
-  const [phone, setPhone]     = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity]       = useState("");
-  const [stateVal, setStateVal] = useState("");
-  const [zip, setZip]         = useState("");
-  const [email, setEmail]     = useState("");
+  // core fields
+  const [name, setName]     = useState("");
+  const [phone, setPhone]   = useState("");
+  const [address, setAddr]  = useState("");
+  const [city, setCity]     = useState("");
+  const [stateVal, setSt]   = useState("");
+  const [zip, setZip]       = useState("");
+  const [email, setEmail]   = useState("");
 
-  // local only (until we add endpoints)
-  const [banner, setBanner] = useState(localStorage.getItem(bannerKey) || "");
-  const [avatar, setAvatar] = useState(localStorage.getItem(avatarKey) || "");
-  const [about, setAbout]   = useState(localStorage.getItem(aboutKey) || "");
-  const [notes, setNotes]   = useState(localStorage.getItem(notesKey) || "");
-  const [horses, setHorses] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(horsesKey) || "[]"); }
-    catch { return []; }
-  });
+  // page content
+  const [about, setAbout] = useState("");
+  const [notes, setNotes] = useState("");
 
-  const [saving, setSaving] = useState(false);
-  const [ok, setOk] = useState(false);
+  // blobs
+  const [bannerBlobID, setBannerBlobID] = useState(null);
+  const [avatarBlobID, setAvatarBlobID] = useState(null);
+  const [mediaBusy, setMediaBusy] = useState(false);
 
   const isOwner = !!(userId && stable && stable.OwnerID === userId);
 
   useEffect(() => {
-    let cancelled = false;
+    let cancel = false;
     (async () => {
       setError("");
+      setLoading(true);
       try {
         const r = await fetch(`${API}/stables/${id}`);
         if (!r.ok) throw new Error(await r.text());
         const s = await r.json();
-        if (cancelled) return;
+        if (cancel) return;
+
         setStable(s);
-       
         setName(s.StableName || "");
         setPhone(s.PhoneNumber || "");
-        setAddress(s.Address || "");
+        setAddr(s.Address || "");
         setCity(s.City || "");
-        setStateVal(s.State || "");
+        setSt(s.State || "");
         setZip(s.Zipcode || "");
         setEmail(s.Email || "");
+        setAbout(s.About || "");
+        setNotes(s.Notes || "");
+        setBannerBlobID(s.BannerBlobID || null);
+        setAvatarBlobID(s.AvatarBlobID || null);
       } catch (e) {
         setError(e.message || "Failed to load stable");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancel) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
-  }, [API, id]);
+    return () => { cancel = true; };
+  }, [id]);
 
   async function saveCore(e) {
     e?.preventDefault?.();
     if (!isOwner) return;
-    setOk(false);
-    setSaving(true);
+    setError("");
     try {
-      // only send changed fields
       const diff = {};
-      if (name       !== (stable.StableName   || "")) diff.StableName = name;
-      if (phone      !== (stable.PhoneNumber  || "")) diff.PhoneNumber = phone || null;
-      if (address    !== (stable.Address      || "")) diff.Address = address;
-      if (city       !== (stable.City         || "")) diff.City = city;
-      if (stateVal   !== (stable.State        || "")) diff.State = stateVal;
-      if (zip        !== (stable.Zipcode      || "")) diff.Zipcode = zip;
-      if (email      !== (stable.Email        || "")) diff.Email = email;
+      if (name     !== (stable?.StableName  || "")) diff.StableName  = name.trim();
+      if (phone    !== (stable?.PhoneNumber || "")) diff.PhoneNumber = phone.trim() || null;
+      if (address  !== (stable?.Address     || "")) diff.Address     = address.trim();
+      if (city     !== (stable?.City        || "")) diff.City        = city.trim();
+      if (stateVal !== (stable?.State       || "")) diff.State       = stateVal.trim();
+      if (zip      !== (stable?.Zipcode     || "")) diff.Zipcode     = zip.trim();
+      if (email    !== (stable?.Email       || "")) diff.Email       = email.trim();
 
-      if (Object.keys(diff).length === 0) {
-        setOk(true);
-        return;
-      }
+      if (!Object.keys(diff).length) return;
 
       const r = await fetch(`${API}/stables/${id}`, {
         method: "PUT",
@@ -113,244 +100,195 @@ export default function StableProfile() {
       if (!r.ok) throw new Error(await r.text());
       const updated = await r.json();
       setStable(updated);
-      setOk(true);
     } catch (e) {
       setError(e.message || "Update failed");
-    } finally {
-      setSaving(false);
     }
   }
 
-  async function onChooseBanner(file) {
-    const data = await toDataUrl(file);
-    setBanner(data);
-    localStorage.setItem(bannerKey, data);
-  }
-  async function onChooseAvatar(file) {
-    const data = await toDataUrl(file);
-    setAvatar(data);
-    localStorage.setItem(avatarKey, data);
-  }
-
-  function removeBanner() {
-    setBanner(""); localStorage.removeItem(bannerKey);
-  }
-  function removeAvatar() {
-    setAvatar(""); localStorage.removeItem(avatarKey);
+  async function savePage(e) {
+    e?.preventDefault?.();
+    if (!isOwner) return;
+    setError("");
+    try {
+      const r = await fetch(`${API}/stables/${id}/page`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-user-id": String(userId || "") },
+        body: JSON.stringify({ about, notes }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+    } catch (e) {
+      setError(e.message || "Saving page content failed");
+    }
   }
 
-  function saveLocal() {
-    localStorage.setItem(aboutKey, about);
-    localStorage.setItem(notesKey, notes);
-    localStorage.setItem(horsesKey, JSON.stringify(horses));
-    setOk(true);
+  async function upload(kind, file) {
+    if (!isOwner || !file) return;
+    setMediaBusy(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch(`${API}/stables/${id}/media/${kind}`, {
+        method: "PUT",
+        headers: { "x-user-id": String(userId || "") },
+        body: fd,
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const json = await r.json();
+      if (kind === "banner") setBannerBlobID(json.blobId || null);
+      else setAvatarBlobID(json.blobId || null);
+    } catch (e) {
+      setError(e.message || `Uploading ${kind} failed`);
+    } finally {
+      setMediaBusy(false);
+    }
   }
 
-  function addHorse() {
-    setHorses([...horses, { name: "", years: "" }]);
-  }
-  function updateHorse(i, key, val) {
-    const next = horses.slice();
-    next[i] = { ...next[i], [key]: val };
-    setHorses(next);
-  }
-  function removeHorse(i) {
-    const next = horses.slice(); next.splice(i, 1); setHorses(next);
+  function remove(kind) {
+    if (kind === "banner") setBannerBlobID(null);
+    else setAvatarBlobID(null);
   }
 
   if (loading) {
     return (
-      <section className="container">
-        <div className="skeleton" style={{ height: 220, borderRadius: 12, marginBottom: 16 }} />
-        <div className="skeleton" style={{ height: 16, width: 180 }} />
-      </section>
+      <div className="sp-shell">
+        <div className="sp-banner skeleton" />
+        <div className="sp-inner">
+          <div className="skeleton" style={{ height: 22, width: 220, marginTop: 20 }} />
+          <div className="skeleton" style={{ height: 14, width: 320, marginTop: 8 }} />
+        </div>
+      </div>
     );
   }
 
   if (!stable) {
     return (
-      <section className="container">
-        <p className="form-error">Stable not found.</p>
-        <button className="btn-brown" onClick={() => navigate(-1)}>Go back</button>
-      </section>
+      <div className="sp-shell">
+        <div className="sp-inner" style={{ paddingTop: 40 }}>
+          <p className="form-error">Stable not found.</p>
+          <button className="sp-btn sp-btn-brown" onClick={() => navigate(-1)}>Go back</button>
+        </div>
+      </div>
     );
   }
 
+  const bannerSrc = bannerBlobID ? `${API}/blobs/${bannerBlobID}` : null;
+  const avatarSrc = avatarBlobID ? `${API}/blobs/${avatarBlobID}` : null;
+
   return (
-    <section className="container stable-profile">
-      {/* banner and profilepic */}
-      <div className="stable-banner" style={{ background: "var(--bar-sage)" }}>
-        {banner ? (
-          <img className="stable-banner__img" src={banner} alt="Stable banner" />
+    <div className="sp-shell">
+
+      <div className="sp-banner">
+        {bannerSrc ? (
+          <img className="sp-banner-img" src={bannerSrc} alt="Stable banner" />
         ) : (
-          <div className="stable-banner__placeholder">
-            <span>Upload banner</span>
-          </div>
+          <div className="sp-banner-empty">Upload banner</div>
         )}
 
         {isOwner && (
-          <div className="banner-actions">
-            <label className="btn-light" htmlFor="bannerInput">Change banner</label>
-            <input id="bannerInput" type="file" accept="image/*" hidden
-                   onChange={(e) => e.target.files?.[0] && onChooseBanner(e.target.files[0])} />
-            {banner && <button type="button" className="btn-light" onClick={removeBanner}>Remove</button>}
+          <div className="sp-banner-actions">
+            <label className="sp-btn sp-btn-light" htmlFor="bannerInput">
+              {mediaBusy ? "Working…" : "Change banner"}
+            </label>
+            <input
+              id="bannerInput"
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => e.target.files?.[0] && upload("banner", e.target.files[0])}
+            />
+            {bannerBlobID && (
+              <button className="sp-btn sp-btn-light" type="button" onClick={() => remove("banner")}>
+                Remove
+              </button>
+            )}
           </div>
         )}
 
-        <div className="stable-avatar">
-          {avatar ? (
-            <img src={avatar} alt="Stable logo" />
-          ) : (
-            <div className="stable-avatar__placeholder">Logo</div>
-          )}
-
+        <div className="sp-avatar">
+          {avatarSrc ? <img src={avatarSrc} alt="Stable logo" /> : <div className="sp-avatar-empty">Logo</div>}
           {isOwner && (
-            <>
-              <label className="avatar-edit" htmlFor="avatarInput">Edit</label>
-              <input id="avatarInput" type="file" accept="image/*" hidden
-                     onChange={(e) => e.target.files?.[0] && onChooseAvatar(e.target.files[0])} />
-              {avatar && <button type="button" className="avatar-remove" onClick={removeAvatar}>✕</button>}
-            </>
+            <div className="sp-avatar-actions">
+              <label className="sp-avatar-edit" htmlFor="avatarInput">Edit</label>
+              <input
+                id="avatarInput"
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => e.target.files?.[0] && upload("avatar", e.target.files[0])}
+              />
+              {avatarBlobID && (
+                <button className="sp-avatar-remove" type="button" onClick={() => remove("avatar")} aria-label="Remove avatar">
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
 
-      {/* name + address */}
-      <div className="stable-title">
-        <input
-          className="stable-title__input"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          disabled={!isOwner}
-        />
-        <div className="stable-sub">
-          <input
-            className="stable-sub__input"
-            placeholder="Address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            disabled={!isOwner}
-          />
-          <div className="stable-sub__row">
-            <input
-              className="stable-sub__city"
-              placeholder="City"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              disabled={!isOwner}
-            />
-            <select
-              className="stable-sub__state"
-              value={stateVal}
-              onChange={(e) => setStateVal(e.target.value)}
-              disabled={!isOwner}
-            >
-              <option value="">State</option>
-              {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <input
-              className="stable-sub__zip"
-              placeholder="Zip"
-              value={zip}
-              onChange={(e) => setZip(e.target.value)}
-              disabled={!isOwner}
-            />
+
+      <div className="sp-inner">
+        <div className="sp-title-block">
+          <input className="sp-title" value={name} onChange={(e) => setName(e.target.value)} disabled={!isOwner} />
+          <div className="sp-sub">
+            <input className="sp-sub-line" placeholder="Address" value={address} onChange={(e) => setAddr(e.target.value)} disabled={!isOwner} />
+            <div className="sp-sub-row">
+              <input className="sp-sub-city" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} disabled={!isOwner} />
+              <select className="sp-sub-state" value={stateVal} onChange={(e) => setSt(e.target.value)} disabled={!isOwner}>
+                <option value="">State</option>
+                {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <input className="sp-sub-zip" placeholder="Zip" value={zip} onChange={(e) => setZip(e.target.value)} disabled={!isOwner} />
+            </div>
           </div>
         </div>
+
+        <div className="sp-grid">
+          <div className="sp-left">
+            <div className="sp-rating"><div className="sp-star">★</div><div className="sp-rating-text"></div></div>
+
+            <div className="sp-cta-row">
+              <Link className="sp-btn sp-btn-brown sp-btn-big" to="/lessons">Riding Lessons</Link>
+              <Link className="sp-btn sp-btn-brown sp-btn-big" to="/boardingInfo">Boarding Services</Link>
+            </div>
+
+            <div className="sp-card">
+              <h3 className="sp-section">Announcements</h3>
+              <textarea className="sp-input sp-textarea" rows={6} placeholder="Share news or temporary notices…" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={!isOwner} />
+            </div>
+
+            <button className="sp-btn sp-btn-ghost sp-faq">Frequently Asked Questions <span className="sp-arrow">→</span></button>
+
+            {isOwner && (
+              <div className="sp-save-row">
+                <button className="sp-btn sp-btn-brown" onClick={saveCore}>Save core details</button>
+                <button className="sp-btn sp-btn-light" onClick={savePage}>Save page content</button>
+                {error && <span className="sp-err">{error}</span>}
+              </div>
+            )}
+          </div>
+
+          <div className="sp-right">
+            <div className="sp-card">
+              <h3 className="sp-section">About us</h3>
+              <textarea className="sp-input sp-textarea" rows={10} placeholder="info about stable, trainers, horses etc" value={about} onChange={(e) => setAbout(e.target.value)} disabled={!isOwner} />
+            </div>
+
+            <div className="sp-card">
+              <div className="sp-horses-head">
+                <h3 className="sp-section">Our Horses</h3>
+                {isOwner && <Link className="sp-btn sp-btn-light" to={`/stables/${id}/horses/new`}>Add horse</Link>}
+              </div>
+              <div className="sp-muted">No horses added yet.</div>
+              <div className="sp-list-cta">
+                <Link className="sp-btn sp-btn-brown sp-btn-wide" to={`/stables/${id}/horses`}>See Full List</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {!isOwner && error && <div className="sp-err" style={{ marginTop: 8 }}>{error}</div>}
       </div>
-
-      {/* main grid */}
-      <div className="stable-grid">
-        <div className="col-left">
-          <div className="rating-row">
-            <div className="star">★</div>
-            <div className="rating-text">4.5 (20 reviews)</div>
-          </div>
-
-          <div className="grid-buttons">
-            <Link className="btn-brown" to="/lessons">Riding Lessons</Link>
-            <Link className="btn-brown" to="/boarding">Boarding Services</Link>
-          </div>
-
-          <div className="card">
-            <h3 className="section-title">Announcements</h3>
-            <textarea
-              className="input textarea"
-              rows={6}
-              placeholder="Share news or temporary notices…"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={!isOwner}
-            />
-          </div>
-
-          <Link className="cta-nav faq-link" to="/faq">
-            <span>Frequently Asked Questions</span><span className="arrow">→</span>
-          </Link>
-        </div>
-
-        <div className="col-right">
-          <div className="card">
-            <h3 className="section-title">About us</h3>
-            <textarea
-              className="input textarea"
-              rows={10}
-              placeholder="info about stable, trainers, horses etc"
-              value={about}
-              onChange={(e) => setAbout(e.target.value)}
-              disabled={!isOwner}
-            />
-          </div>
-
-          <div className="card">
-            <div className="horses-head">
-              <h3 className="section-title">Our Horses</h3>
-              {isOwner && <button className="btn-light" type="button" onClick={addHorse}>Add horse</button>}
-            </div>
-            <div className="horses-list">
-              {horses.length === 0 && <div className="muted">No horses added yet.</div>}
-              {horses.map((h, i) => (
-                <div className="horse-pill" key={i}>
-                  <input
-                    className="pill-name"
-                    placeholder="Name"
-                    value={h.name}
-                    onChange={(e) => updateHorse(i, "name", e.target.value)}
-                    disabled={!isOwner}
-                  />
-                  <input
-                    className="pill-years"
-                    placeholder="years"
-                    value={h.years}
-                    onChange={(e) => updateHorse(i, "years", e.target.value)}
-                    disabled={!isOwner}
-                  />
-                  {isOwner && (
-                    <button className="pill-remove" type="button" onClick={() => removeHorse(i)}>✕</button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: ".5rem" }}>
-              <Link className="btn-brown" to="/horses">See Full List</Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* save row */}
-      {isOwner ? (
-        <div className="save-row">
-          <button className="btn-brown" onClick={saveCore} disabled={saving}>
-            {saving ? "Saving…" : "Save core details"}
-          </button>
-          <button className="btn-light" onClick={saveLocal}>Save page content</button>
-          {ok && <span className="form-success" style={{ marginLeft: 8 }}>Saved!</span>}
-          {error && <span className="form-error" style={{ marginLeft: 8 }}>{error}</span>}
-        </div>
-      ) : (
-        <div className="muted">Viewing as guest (youre not the owner of this stable).</div>
-      )}
-    </section>
+    </div>
   );
 }

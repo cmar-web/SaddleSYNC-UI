@@ -1,0 +1,36 @@
+@import "./stableSignUp.css";
+
+.password-wrap{
+  position:relative;
+}
+.password-wrap .ghost-btn{
+  position:absolute;
+  right:6px;
+  top:50%;
+  transform:translateY(-50%);
+}
+
+.ghost-btn{
+  border:0;
+  background:transparent;
+  padding:8px 10px;
+  font-size:.9rem;
+  color:var(--green-900);
+  border-radius:10px;
+  cursor:pointer;
+}
+.ghost-btn:hover{ background:#f0f3ef; }
+
+.row{ display:flex; gap:12px; align-items:center; }
+.between{ justify-content:space-between; }
+
+.checkbox{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+.link-strong{ color:var(--brown-700); font-weight:700; text-decoration:none; }
+.link-strong:hover{ text-decoration:underline; }

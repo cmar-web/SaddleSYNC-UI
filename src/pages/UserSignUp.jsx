@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { setCurrentUser } from "../lib/auth";
+import { api } from "../lib/api";
+import { setSession } from "../lib/auth";
+import "../styles/userSignUp.css";
 
 const isEmail = (s) => /\S+@\S+\.\S+/.test(s || "");
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
 
 export default function UserSignUp() {
-  const API = (import.meta.env.VITE_API_URL || "") + "/api/users";
   const navigate = useNavigate();
 
   const [username, setUsername]   = useState("");
@@ -15,6 +16,7 @@ export default function UserSignUp() {
   const [lastName, setLastName]   = useState("");
   const [email, setEmail]         = useState("");
   const [level, setLevel]         = useState("");
+  const [stableOwner, setStableOwner] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -22,7 +24,6 @@ export default function UserSignUp() {
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
-
     if (!username.trim()) return setError("Username is required.");
     if (!password.trim()) return setError("Password is required.");
     if (email && !isEmail(email)) return setError("Please enter a valid email.");
@@ -34,21 +35,16 @@ export default function UserSignUp() {
       ...(lastName.trim()  ? { lastName: lastName.trim() }   : {}),
       ...(email.trim()     ? { email: email.trim() }         : {}),
       ...(level.trim()     ? { level: level.trim() }         : {}),
+      stableOwner: stableOwner ? 1 : 0,
     };
 
     setSubmitting(true);
     try {
-      const r = await fetch(API, {
+      const { user, token } = await api("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!r.ok) throw new Error((await r.text()) || "Create failed");
-
-      const created = await r.json();
-      setCurrentUser(created);
-
-      // nav to profile
+      setSession({ user, token });
       navigate("/profile", { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong");
@@ -64,35 +60,36 @@ export default function UserSignUp() {
 
       <form onSubmit={onSubmit} className="card form-card" noValidate>
         <div className="form-grid">
-          <div className="form-row">
-            <label htmlFor="username" className="label">
-              Username <span className="req">*</span>
-            </label>
-            <input
-              id="username"
-              className="input"
-              placeholder="Enter a username..."
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              required
-            />
-          </div>
-
-          <div className="form-row">
-            <label htmlFor="password" className="label">
-              Password <span className="req">*</span>
-            </label>
-            <input
-              id="password"
-              className="input"
-              type="password"
-              placeholder="Enter a password..."
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              required
-            />
+          <div className="form-row cols-2">
+            <div>
+              <label htmlFor="username" className="label">
+                Username <span className="req">*</span>
+              </label>
+              <input
+                id="username"
+                className="input"
+                placeholder="Enter a username..."
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="label">
+                Password <span className="req">*</span>
+              </label>
+              <input
+                id="password"
+                className="input"
+                type="password"
+                placeholder="Enter a password..."
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                required
+              />
+            </div>
           </div>
 
           <div className="form-row cols-2">
@@ -133,19 +130,34 @@ export default function UserSignUp() {
             />
           </div>
 
-          <div className="form-row">
-            <label htmlFor="level" className="label">Level</label>
-            <select
-              id="level"
-              className="input select"
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-            >
-              <option value="">Select level (optional)</option>
-              {LEVEL_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
+          <div className="form-row cols-2">
+            <div>
+              <label htmlFor="level" className="label">Level</label>
+              <select
+                id="level"
+                className="input select"
+                value={level}
+                onChange={(e) => setLevel(e.target.value)}
+              >
+                <option value="">Select level (optional)</option>
+                {LEVEL_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="toggle-cell">
+              <span className="label">Stable owner</span>
+              <label className="switch">
+                <input
+                  id="stableOwner"
+                  type="checkbox"
+                  checked={stableOwner}
+                  onChange={(e) => setStableOwner(e.target.checked)}
+                />
+                <span className="slider" />
+              </label>
+            </div>
           </div>
 
           <div className="form-actions">
