@@ -1,0 +1,112 @@
+:root {
+  --nav-bg: #6b7b59;  /* olive green bar */
+  --cta: #5a3a21;     /* brown btn */
+  --cta-tx: #ffffff;  /* white text */
+}
+
+.nav-header {
+  background: var(--nav-bg);
+  width: 100%;
+  padding: 0.5rem 0;
+}
+
+.nav-header nav.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  max-width: none;
+  margin: 0;
+
+  padding: 0 1rem;
+}
+
+.brand--light {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  text-decoration: none;
+}
+
+.logo {
+  width: 45px;
+  height: auto;
+}
+
+.brand-text {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: white;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.btn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-light {
+  background: white;
+  color: var(--cta);
+  font-weight: 600;
+}
+
+.btn-light.btn-strong {
+  background: var(--cta);
+  color: var(--cta-tx);
+}
+
+.btn-light:hover {
+  opacity: 0.9;
+}
+
+.cta-nav {
+  background: var(--cta);
+  color: var(--cta-tx);
+  padding: 0.5rem 0.9rem;
+  border-radius: 4px;
+  font-weight: 600;
+
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
+}
+
+.cta-nav:hover {
+  opacity: 0.9;
+}
+
+.arrow {
+  font-size: 1.1rem;
+}
+
+.user-badge {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  text-decoration: none;
+  color: white;
+}
+
+.user-badge__label {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.user-badge__name {
+  font-size: 0.95rem;
+  font-weight: 600;
+}

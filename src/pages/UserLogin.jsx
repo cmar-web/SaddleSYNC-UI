@@ -33,7 +33,7 @@ export default function Login() {
 
   return (
     <section className="container auth">
-      <h1 className="auth-title">Welcome back</h1>
+      <h1 className="auth-title">Welcome back!</h1>
       <p className="auth-subtitle">Log in to continue</p>
 
       <form className="card form-card" onSubmit={onSubmit} noValidate>

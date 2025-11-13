@@ -1,7 +1,13 @@
 :root{
-  --bg:#f6f7f8; --card:#fff; --text:#1f2a1f; --muted:#6b746a;
-  --brand:#44593f; --accent:#6b3b21; --ring:rgba(68, 89, 63, .25);
-  --shadow:0 10px 30px rgba(0,0,0,.08); --radius:18px;
+  --bg:#f6f7f8; 
+  --card:#fff; 
+  --text:#1f2a1f;
+   --muted:#6b746a;
+  --brand:#6b7b59;
+   --accent:#6b3b21; 
+   --ring:rgba(68, 89, 63, .25);
+  --shadow:0 10px 30px rgba(0,0,0,.08); -
+  -radius:18px;
 }
 
 .profile-container{ display:grid; gap:18px; }

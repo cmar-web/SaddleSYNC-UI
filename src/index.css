@@ -33,25 +33,6 @@ body {
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 .main { flex: 1; }
 
-/* navigation */
-.nav-header.nav-green {
-  background: var(--nav-bg);
-  position: sticky; top: 0; z-index: 50;
-  border-bottom: 0;
-}
-.nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-}
-.brand--light { display:flex; align-items:center; gap:.5rem; text-decoration:none; }
-.brand--light .brand-text { color:#fff; font-weight:700; letter-spacing:.02em; }
-.logo { width: 40px; height: 40px; object-fit: contain; display:block; }
-
-.actions { display:flex; align-items:center; gap:.75rem; }
-
 /* white buttons */
 .btn {
   border-radius: .6rem;

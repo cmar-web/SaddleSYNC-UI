@@ -3,7 +3,7 @@
   --ink:#2a2a2a;
   --muted:#6a6a6a;
 
-  --green-900:#2f4b2f;
+  --green-700:#6b7b59;
   --green-500:#7c966d;
   --green-200:#eaf2de;
 
@@ -111,7 +111,7 @@
   width:34px; height:34px; border-radius:8px; border:0;
   display:grid; place-items:center; font-weight:900; cursor:pointer;
 }
-.btn.icon.add{ background:var(--green-900); color:#fff; }
+.btn.icon.add{ background:var(--green-700); color:#fff; }
 .btn.icon.del{ background:#d33; color:#fff; }
 
 .date-row{ display:flex; gap:8px; }

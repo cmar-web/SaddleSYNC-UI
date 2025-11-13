@@ -3,7 +3,7 @@
   --ink:#2a2a2a;
   --muted:#6a6a6a;
 
-  --green-900:#2f4b2f;
+  --green-700:#6b7b59;
   --green-800:#334f34;
   --green-400:#cfe0b9;
   --green-300:#eaf2de;
@@ -19,7 +19,7 @@ html,body,#root{height:100%}
 
 body{background:var(--bg); color:var(--ink); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
 
-/* PAGE */
+/* pg */
 .riding{
   display:flex;
   justify-content:center;
@@ -36,7 +36,7 @@ body{background:var(--bg); color:var(--ink); font-family:Inter,system-ui,Segoe U
 /* LEFT */
 .riding__left{display:flex; flex-direction:column; gap:16px}
 
-/* Hero */
+/* hero */
 .hero{
   display:flex; align-items:center; gap:16px;
 }
@@ -49,13 +49,13 @@ body{background:var(--bg); color:var(--ink); font-family:Inter,system-ui,Segoe U
 .hero__mark{
   width:64px; height:64px; border-radius:50%;
   display:grid; place-items:center;
-  background:var(--green-900);
+  background:var(--green-700);
   color:#fff; font-weight:800; font-size:20px;
 }
 .hero__copy{line-height:1.2}
 .hero__title{
-  margin:0; color:var(--green-900);
-  font-size:34px; font-weight:900;
+  margin:0; color:var(--green-700);
+  font-size:34px; font-weight:700;
 }
 .hero__price{margin:.15rem 0; font-weight:600}
 
@@ -70,13 +70,13 @@ body{background:var(--bg); color:var(--ink); font-family:Inter,system-ui,Segoe U
 
 .card__title{
   margin:2px 0 2px; text-align:center;
-  color:var(--green-900); font-size:28px; font-weight:900;
+  color:var(--green-700); font-size:28px; font-weight:900;
 }
 .card__subtitle{
   text-align:center; color:var(--muted); margin:0 0 8px; font-size:14px;
 }
 
-/* Form grid */
+/* form grid */
 .form-grid{
   display:grid; grid-template-columns:1fr 1fr; gap:10px;
   margin-top:4px;
@@ -90,11 +90,11 @@ body{background:var(--bg); color:var(--ink); font-family:Inter,system-ui,Segoe U
 .gear{margin:10px 0 6px}
 .gear__check{font-size:14px}
 .gear__hint{margin:4px 0 0; color:var(--ink); font-size:13px}
-.gear__hint a{color:var(--green-900); text-decoration:underline}
+.gear__hint a{color:var(--green-700); text-decoration:underline}
 
 .notes{resize:none; margin-top:8px}
 
-/* Buttons */
+/* btns */
 .btn{
   border:0; cursor:pointer; border-radius:10px; font-weight:700;
 }
@@ -113,7 +113,7 @@ body{background:var(--bg); color:var(--ink); font-family:Inter,system-ui,Segoe U
 /* RIGHT */
 .riding__right{display:flex; flex-direction:column; gap:12px}
 
-/* Calendar box */
+/* calender box */
 .calendar{
   border:1px solid var(--green-outline);
   border-radius:var(--radius);
@@ -121,7 +121,7 @@ body{background:var(--bg); color:var(--ink); font-family:Inter,system-ui,Segoe U
 }
 .calendar__head{
   display:flex; justify-content:center; gap:6px;
-  color:var(--green-900); font-weight:800; margin-bottom:6px;
+  color:var(--green-700); font-weight:800; margin-bottom:6px;
 }
 .calendar__week{
   display:grid; grid-template-columns:repeat(7,1fr);
@@ -136,9 +136,9 @@ body{background:var(--bg); color:var(--ink); font-family:Inter,system-ui,Segoe U
   height:36px; border-radius:999px; display:grid; place-items:center;
   font-weight:700; background:var(--green-400);
 }
-.pill--active{background:var(--green-900); color:#fff}
+.pill--active{background:var(--green-700); color:#fff}
 
-/* Option cards */
+/* options cards */
 .options{display:grid; grid-template-columns:1fr 1fr; gap:12px}
 
 .option-card{border:1px solid var(--green-outline); border-radius:10px; overflow:hidden; background:#fff}

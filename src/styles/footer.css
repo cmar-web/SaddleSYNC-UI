@@ -1,0 +1,87 @@
+:root {
+  --nav-bg: #6b7b59;   /* olive green bar */
+  --cta:    #5a3a21;   /* brown button */
+  --cta-tx: #ffffff;   /* text */
+}
+
+.footer {
+  background: var(--nav-bg);
+  color: white;
+  padding: 2rem 0;
+  margin-top: 3rem;
+}
+
+.footer-container {
+  width: 100%;
+  padding: 0 1rem;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.footer-logo {
+  width: 40px;
+  height: auto;
+}
+
+.footer-logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+}
+
+.footer-brand-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.footer-link,
+.footer-link-btn {
+  color: white;
+  text-decoration: none;
+  font-size: 0.95rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem 0.7rem;
+}
+
+.footer-link:hover,
+.footer-link-btn:hover {
+  opacity: 0.8;
+}
+
+.footer-cta {
+  background: var(--cta);
+  color: var(--cta-tx);
+  text-decoration: none;
+  padding: 0.5rem 0.9rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.footer-cta:hover {
+  opacity: 0.9;
+}
+
+.footer-bottom {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}

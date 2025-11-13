@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import NavigationBar from "./components/NavigationBar.jsx";
+import Footer from "./components/Footer.jsx";
 import "./index.css";
 
 
@@ -50,6 +51,7 @@ export default function App() {
           </Suspense>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

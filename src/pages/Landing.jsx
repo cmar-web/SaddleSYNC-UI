@@ -32,8 +32,7 @@ export default function Landing() {
 
         {/* navs for lessons, boarding, and stablesign up */}
         <div className="hero-ctas">
-          <Link to="/lessons" className="btn-cta big">Find Riding Lessons</Link>
-          <Link to="/boarding" className="btn-cta big">Find Boarding Services</Link>
+          <Link to="/search" className="btn-cta big">Find Riding Lessons or Boarding Services</Link>
           <Link to="/stableSignUp" className="btn-cta big">I’m a Stable Owner</Link>
         </div>
       </header>

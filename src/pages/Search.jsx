@@ -71,12 +71,6 @@ export default function Search() {
 
   return (
     <section className="search-layout">
-      <div className="search-topbar">
-        <div className="spacer" />
-        <h1 className="title">Search For Stables</h1>
-        <div className="spacer" />
-      </div>
-
       <div className="search-grid container">
         <aside>
           <div className="ss-map-card">
