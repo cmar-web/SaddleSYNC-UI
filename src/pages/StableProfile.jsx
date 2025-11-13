@@ -1,3 +1,4 @@
+// src/pages/StableProfile.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../lib/auth";
@@ -9,6 +10,7 @@ const STATES = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
 ];
 
+const OFFER_OPTIONS = ["Lessons", "Boarding"];
 const API = (import.meta.env.VITE_API_URL || "") + "/api";
 
 export default function StableProfile() {
@@ -24,7 +26,6 @@ export default function StableProfile() {
   const [stable, setStable]   = useState(null);
   const [error, setError]     = useState("");
 
-  // core fields
   const [name, setName]     = useState("");
   const [phone, setPhone]   = useState("");
   const [address, setAddr]  = useState("");
@@ -32,12 +33,11 @@ export default function StableProfile() {
   const [stateVal, setSt]   = useState("");
   const [zip, setZip]       = useState("");
   const [email, setEmail]   = useState("");
+  const [offers, setOffers] = useState([]);
 
-  // page content
   const [about, setAbout] = useState("");
   const [notes, setNotes] = useState("");
 
-  // blobs
   const [bannerBlobID, setBannerBlobID] = useState(null);
   const [avatarBlobID, setAvatarBlobID] = useState(null);
   const [mediaBusy, setMediaBusy] = useState(false);
@@ -67,6 +67,12 @@ export default function StableProfile() {
         setNotes(s.Notes || "");
         setBannerBlobID(s.BannerBlobID || null);
         setAvatarBlobID(s.AvatarBlobID || null);
+
+        const parsedOffers = (s.Offers || "")
+          .split(",")
+          .map(t => t.trim())
+          .filter(Boolean);
+        setOffers(parsedOffers);
       } catch (e) {
         setError(e.message || "Failed to load stable");
       } finally {
@@ -75,6 +81,15 @@ export default function StableProfile() {
     })();
     return () => { cancel = true; };
   }, [id]);
+
+  function toggleOffer(value) {
+    if (!isOwner) return;
+    setOffers(prev =>
+      prev.includes(value)
+        ? prev.filter(v => v !== value)
+        : [...prev, value]
+    );
+  }
 
   async function saveCore(e) {
     e?.preventDefault?.();
@@ -90,16 +105,35 @@ export default function StableProfile() {
       if (zip      !== (stable?.Zipcode     || "")) diff.Zipcode     = zip.trim();
       if (email    !== (stable?.Email       || "")) diff.Email       = email.trim();
 
+      const stableOffersCsv = (stable?.Offers || "")
+        .split(",")
+        .map(t => t.trim())
+        .filter(Boolean)
+        .join(",");
+      const newOffersCsv = offers.join(",");
+      if (newOffersCsv !== stableOffersCsv) {
+        diff.Offers = newOffersCsv;
+      }
+
       if (!Object.keys(diff).length) return;
 
       const r = await fetch(`${API}/stables/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-user-id": String(userId || "") },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": String(userId || "")
+        },
         body: JSON.stringify(diff),
       });
       if (!r.ok) throw new Error(await r.text());
       const updated = await r.json();
       setStable(updated);
+
+      const updatedOffers = (updated.Offers || "")
+        .split(",")
+        .map(t => t.trim())
+        .filter(Boolean);
+      setOffers(updatedOffers);
     } catch (e) {
       setError(e.message || "Update failed");
     }
@@ -226,7 +260,6 @@ export default function StableProfile() {
         </div>
       </div>
 
-
       <div className="sp-inner">
         <div className="sp-title-block">
           <input className="sp-title" value={name} onChange={(e) => setName(e.target.value)} disabled={!isOwner} />
@@ -245,7 +278,27 @@ export default function StableProfile() {
 
         <div className="sp-grid">
           <div className="sp-left">
-            <div className="sp-rating"><div className="sp-star">★</div><div className="sp-rating-text"></div></div>
+            <div className="sp-rating">
+              <div className="sp-star">★</div>
+              <div className="sp-rating-text"></div>
+            </div>
+
+            <div className="sp-card">
+              <h3 className="sp-section">Services offered</h3>
+              <div className="sp-offers-row">
+                {OFFER_OPTIONS.map(opt => (
+                  <label key={opt} className="sp-offer-pill">
+                    <input
+                      type="checkbox"
+                      checked={offers.includes(opt)}
+                      disabled={!isOwner}
+                      onChange={() => toggleOffer(opt)}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
             <div className="sp-cta-row">
               <Link className="sp-btn sp-btn-brown sp-btn-big" to="/lessons">Riding Lessons</Link>
@@ -257,7 +310,9 @@ export default function StableProfile() {
               <textarea className="sp-input sp-textarea" rows={6} placeholder="Share news or temporary notices…" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={!isOwner} />
             </div>
 
-            <button className="sp-btn sp-btn-ghost sp-faq">Frequently Asked Questions <span className="sp-arrow">→</span></button>
+            <button className="sp-btn sp-btn-ghost sp-faq">
+              Frequently Asked Questions <span className="sp-arrow">→</span>
+            </button>
 
             {isOwner && (
               <div className="sp-save-row">

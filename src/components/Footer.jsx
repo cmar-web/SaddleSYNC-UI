@@ -36,19 +36,9 @@ export default function Footer() {
         </div>
 
         <div className="footer-links">
-          {!user ? (
-            <>
+
               <NavLink to="/contactUs" className="footer-link">Contact Us</NavLink>
-            </>
-          ) : (
-            <>
-              <NavLink to="/profile" className="footer-link">Profile</NavLink>
-              <NavLink to="/stableSignUp" className="footer-cta">Create Stable →</NavLink>
-              <button type="button" onClick={handleLogout} className="footer-link-btn">
-                Logout
-              </button>
-            </>
-          )}
+
         </div>
 
       </div>

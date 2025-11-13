@@ -10,6 +10,7 @@ const STATES = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
 ];
 const isEmail = (s) => /\S+@\S+\.\S+/.test(s || "");
+const OFFER_OPTIONS = ["Lessons", "Boarding"];
 
 export default function StableSignUp() {
   const API = (import.meta.env.VITE_API_URL || "") + "/api/stables";
@@ -18,7 +19,6 @@ export default function StableSignUp() {
   const user = useMemo(() => getCurrentUser(), []);
   const userId = user?.UserID;
 
-  // gate if not logged in
   if (!userId) {
     return (
       <section className="container auth">
@@ -34,7 +34,6 @@ export default function StableSignUp() {
     );
   }
 
-  // form fields
   const [stableName, setStableName] = useState("");
   const [phone, setPhone]           = useState("");
   const [address, setAddress]       = useState("");
@@ -42,19 +41,26 @@ export default function StableSignUp() {
   const [stateVal, setStateVal]     = useState("");
   const [zip, setZip]               = useState("");
   const [email, setEmail]           = useState(user?.Email || "");
+  const [offers, setOffers]         = useState([]); // selected offers
 
   const [submitting, setSubmitting] = useState(false);
-  const [phase, setPhase] = useState(""); 
+  const [phase, setPhase] = useState("");
   const [error, setError] = useState("");
 
-  // helper: pretty joins zip5 and zip4
   const formatZip = (zip5, zip4) => zip4 ? `${zip5}-${zip4}` : zip5;
+
+  function toggleOffer(value) {
+    setOffers(prev =>
+      prev.includes(value)
+        ? prev.filter(v => v !== value)
+        : [...prev, value]
+    );
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
 
-    // matches controller validications
     if (!stableName.trim()) return setError("Stable name is required.");
     if (!address.trim())    return setError("Address is required.");
     if (!city.trim())       return setError("City is required.");
@@ -65,7 +71,6 @@ export default function StableSignUp() {
     setSubmitting(true);
 
     try {
-      //validate, standardiz, geocode (server hits usps and locationiq)
       setPhase("validating");
       const validateRes = await fetch(`${API}/validate-address`, {
         method: "POST",
@@ -86,11 +91,9 @@ export default function StableSignUp() {
         throw new Error(validateData.error || "Address validation failed.");
       }
 
-      // use standardized values from server
-      const std = validateData.address; 
+      const std = validateData.address;
       const coords = validateData.coords;
 
-      //create stable
       setPhase("creating");
       const createPayload = {
         StableName: stableName.trim(),
@@ -101,15 +104,15 @@ export default function StableSignUp() {
         State: std.state,
         Zipcode: formatZip(std.zip5, std.zip4),
         Email: email.trim(),
+        Offers: offers.join(","), // important line
       };
 
       const r = await fetch(API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-           Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,
+          Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,
         },
-
         body: JSON.stringify(createPayload),
       });
 
@@ -130,10 +133,9 @@ export default function StableSignUp() {
       const saveRes = await fetch(`${API}/${created.StableID}/address`, {
         method: "PUT",
         headers: {
-            "Content-Type": "application/json",
-            Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,  
-      },
-
+          "Content-Type": "application/json",
+          Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,
+        },
         body: JSON.stringify({ address: std, coords }),
       });
 
@@ -146,7 +148,6 @@ export default function StableSignUp() {
         throw new Error(msg);
       }
 
-      // go to stable profile page
       navigate(`/stables/${created.StableID}`, { replace: true });
 
     } catch (err) {
@@ -166,7 +167,9 @@ export default function StableSignUp() {
         <div className="form-grid">
 
           <div className="form-row">
-            <label htmlFor="stableName" className="label">Stable name <span className="req">*</span></label>
+            <label htmlFor="stableName" className="label">
+              Stable name <span className="req">*</span>
+            </label>
             <input
               id="stableName"
               className="input"
@@ -190,7 +193,9 @@ export default function StableSignUp() {
               />
             </div>
             <div>
-              <label htmlFor="email" className="label">Email <span className="req">*</span></label>
+              <label htmlFor="email" className="label">
+                Email <span className="req">*</span>
+              </label>
               <input
                 id="email"
                 className="input"
@@ -205,7 +210,25 @@ export default function StableSignUp() {
           </div>
 
           <div className="form-row">
-            <label htmlFor="address" className="label">Address <span className="req">*</span></label>
+            <span className="label">Offers</span>
+            <div className="offers-row">
+              {OFFER_OPTIONS.map(opt => (
+                <label key={opt} className="offers-pill">
+                  <input
+                    type="checkbox"
+                    checked={offers.includes(opt)}
+                    onChange={() => toggleOffer(opt)}
+                  />
+                  <span>{opt}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <label htmlFor="address" className="label">
+              Address <span className="req">*</span>
+            </label>
             <input
               id="address"
               className="input"
@@ -219,7 +242,9 @@ export default function StableSignUp() {
 
           <div className="form-row cols-3">
             <div>
-              <label htmlFor="city" className="label">City <span className="req">*</span></label>
+              <label htmlFor="city" className="label">
+                City <span className="req">*</span>
+              </label>
               <input
                 id="city"
                 className="input"
@@ -231,7 +256,9 @@ export default function StableSignUp() {
               />
             </div>
             <div>
-              <label htmlFor="state" className="label">State <span className="req">*</span></label>
+              <label htmlFor="state" className="label">
+                State <span className="req">*</span>
+              </label>
               <select
                 id="state"
                 className="input select"
@@ -245,7 +272,9 @@ export default function StableSignUp() {
               </select>
             </div>
             <div>
-              <label htmlFor="zip" className="label">Zip <span className="req">*</span></label>
+              <label htmlFor="zip" className="label">
+                Zip <span className="req">*</span>
+              </label>
               <input
                 id="zip"
                 className="input"

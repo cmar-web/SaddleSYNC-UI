@@ -9,16 +9,18 @@ export default function Search() {
   const [params, setParams] = useSearchParams();
   const [stables, setStables] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(null); 
+  const [total, setTotal] = useState(null);
 
-
-  const near = params.get("near") || "Erie, PA";
+  const near = params.get("near") || "";
   const offers = (params.get("offers") || "Lessons,Boarding")
     .split(",")
     .map(s => s.trim())
     .filter(Boolean);
 
   useEffect(() => {
+
+    if (!near) return;
+
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -35,7 +37,15 @@ export default function Search() {
         const json = await res.json();
 
         if (!cancelled) {
-          const data = Array.isArray(json?.data) ? json.data : [];
+          const data = Array.isArray(json?.data)
+            ? json.data.map(s => ({
+                ...s,
+                offers: (s.Offers || "")
+                  .split(",")
+                  .map(t => t.trim())
+                  .filter(Boolean),
+              }))
+            : [];
           setStables(data);
           setTotal(Number.isFinite(json?.total) ? json.total : null);
         }
@@ -48,11 +58,13 @@ export default function Search() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [near, offers.join(","), params.get("page"), params.get("pageSize")]);
 
   const filtered = useMemo(() => {
-
     return stables.filter(s =>
       (offers.includes("Lessons") ? s?.offers?.includes("Lessons") : true) &&
       (offers.includes("Boarding") ? s?.offers?.includes("Boarding") : true)
@@ -74,7 +86,7 @@ export default function Search() {
       <div className="search-grid container">
         <aside>
           <div className="ss-map-card">
-            <MapEmbed stables={filtered} fallbackQuery={near} />
+            <MapEmbed stables={filtered} fallbackQuery={near || "United States"} />
             <SearchSidebar
               defaultNear={near}
               defaultOffers={offers}
@@ -88,7 +100,9 @@ export default function Search() {
             <div>
               <h2 className="results-title">Results</h2>
               <p className="results-sub">
-                {resultCount} results found near {near}
+                {near
+                  ? `${resultCount} results found near ${near}`
+                  : "Enter a location to see nearby stables"}
               </p>
             </div>
             <button type="button" className="ss-btn ss-btn-brown">Filter</button>
@@ -96,7 +110,7 @@ export default function Search() {
 
           <div className="ss-results-box">
             {loading && <div className="muted">Loading…</div>}
-            {!loading && filtered.length === 0 && (
+            {!loading && near && filtered.length === 0 && (
               <div className="muted">No results for current filters.</div>
             )}
             {!loading && filtered.map(s => (
@@ -106,6 +120,9 @@ export default function Search() {
                 </Link>
               </div>
             ))}
+            {!near && !loading && (
+              <div className="muted">Start by searching for a city or zip code.</div>
+            )}
           </div>
         </div>
       </div>
