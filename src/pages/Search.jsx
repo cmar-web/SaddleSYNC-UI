@@ -113,13 +113,22 @@ export default function Search() {
             {!loading && near && filtered.length === 0 && (
               <div className="muted">No results for current filters.</div>
             )}
-            {!loading && filtered.map(s => (
-              <div key={s.id ?? `${s.name}-${s.lat}-${s.lng}`} className="ss-result-pill">
-                <Link to={`/stables/${s.id}`} className="ss-result-link">
+          {!loading && filtered.length === 0 && (
+            <div className="muted">No results for current filters.</div>
+          )}
+
+          {!loading && filtered.map(s => {
+            const stableId = s.StableID ?? s.id;
+            const key = stableId ?? `${s.name}-${s.lat}-${s.lng}`;
+
+            return (
+              <div key={key} className="ss-result-pill">
+                <Link to={`/stables/${stableId}`} className="ss-result-link">
                   <StableCard stable={s} />
                 </Link>
               </div>
-            ))}
+            );
+          })}
             {!near && !loading && (
               <div className="muted">Start by searching for a city or zip code.</div>
             )}

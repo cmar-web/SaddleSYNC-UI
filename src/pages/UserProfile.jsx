@@ -52,12 +52,10 @@ export default function Profile() {
         let stbs = [];
         try {
           stbs = await api("/api/stables?owner=me");
-        } catch {
-          const all = await api("/api/stables");
-          stbs = (all || []).filter(s => (s.OwnerID ?? s.ownerId) === me.UserID);
+        } catch (e) {
+          stbs = [];
         }
         setStables(Array.isArray(stbs) ? stbs : []);
-
         // horses
         let hrs = [];
         try {

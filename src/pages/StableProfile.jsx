@@ -209,9 +209,11 @@ export default function StableProfile() {
   const bannerSrc = bannerBlobID ? `${API}/blobs/${bannerBlobID}` : null;
   const avatarSrc = avatarBlobID ? `${API}/blobs/${avatarBlobID}` : null;
 
+  const hasLessons = offers.includes("Lessons");
+  const hasBoarding = offers.includes("Boarding");
+
   return (
     <div className="sp-shell">
-
       <div className="sp-banner">
         {bannerSrc ? (
           <img className="sp-banner-img" src={bannerSrc} alt="Stable banner" />
@@ -301,8 +303,16 @@ export default function StableProfile() {
             </div>
 
             <div className="sp-cta-row">
-              <Link className="sp-btn sp-btn-brown sp-btn-big" to="/lessons">Riding Lessons</Link>
-              <Link className="sp-btn sp-btn-brown sp-btn-big" to="/boardingInfo">Boarding Services</Link>
+              {hasLessons && (
+                <Link className="sp-btn sp-btn-brown sp-btn-big" to="/lessons">
+                  Riding Lessons
+                </Link>
+              )}
+              {hasBoarding && (
+                <Link className="sp-btn sp-btn-brown sp-btn-big" to="/boardingInfo">
+                  Boarding Services
+                </Link>
+              )}
             </div>
 
             <div className="sp-card">
