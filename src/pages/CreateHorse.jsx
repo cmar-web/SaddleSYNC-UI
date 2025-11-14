@@ -1,7 +1,38 @@
 import React from "react";
 import "../styles/createHorse.css";
 
+
+
 export default function CreateHorse() {
+
+    async function onSubmit(e) {
+      e.preventDefault();
+      setError("");
+  
+      const payload = {
+        username: username.trim(),
+        password,
+        ...(name.trim() ? { name: name.trim() } : {}),
+        ...(temperament.trim()  ? { temperament: temperament.trim() }   : {}),
+        ...(age.trim()     ? { age: age.trim() }         : {}),
+        ...(birthday.trim()     ? { birthday: birthday.trim() }   : {}),
+        ...(notes.trim()     ? { notes: notes.trim()  }   : {})
+      };
+  
+      setSubmitting(true);
+      try {
+        const { user, token } = await api("/api/auth/me", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        setSession({ user, token });
+        navigate("/profile", { replace: true });
+      } catch (err) {
+        setError(err.message || "Something went wrong");
+      } finally {
+        setSubmitting(false);
+      }
+    }
   return (
     <main className="horse-create">
       <div className="horse-grid">
