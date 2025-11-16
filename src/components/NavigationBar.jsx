@@ -44,7 +44,7 @@ export default function NavigationBar() {
               <NavLink to="/login" className="btn btn-light">
                 Login
               </NavLink>
-              <NavLink to="/search" className="cta-nav">
+              <NavLink to="/search" className="btn btn-light btn-strong">
                 <span>Find Nearby Stables</span>
                 <span className="arrow">→</span>
               </NavLink>

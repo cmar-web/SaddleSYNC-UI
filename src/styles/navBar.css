@@ -93,9 +93,9 @@
 }
 
 .user-badge {
+  background: white;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.15);
   padding: 0.4rem 0.7rem;
   border-radius: 4px;
   text-decoration: none;
@@ -103,7 +103,7 @@
 }
 
 .user-badge__label {
-  font-size: 0.75rem;
+  font-size: 1rem;
   opacity: 0.85;
 }
 

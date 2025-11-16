@@ -85,7 +85,7 @@ export default function Profile() {
         StableOwner: toBool(form.StableOwner) ? 1 : 0,
       };
       const endpoint = "/api/users/:id";
-      await api(endpoint, { method: "PATCH", body: JSON.stringify(payload) });
+      await api(endpoint, { method: "PUT", body: JSON.stringify(payload) });
     } catch (e) {
       setErr(e.message || "Save failed");
     } finally {
