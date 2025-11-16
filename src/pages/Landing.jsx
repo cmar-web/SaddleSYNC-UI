@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import "../styles/landing.css";
+import heroImg from "../assets/horses-landing.jpg";
 
 export default function Landing() {
   const [featured, setFeatured] = useState([]);
@@ -18,24 +20,68 @@ export default function Landing() {
 
   return (
     <section className="landing">
-      {/* hero */}
-      <header className="hero">
-        <h1 className="hero-title">SADDLESYNC</h1>
-
-        {/* just decorative bars under the title */}
-        <div className="hero-bars" aria-hidden="true">
-          <span className="bar bar-1" />
-          <span className="bar bar-2" />
-          <span className="bar bar-3" />
-          <span className="bar bar-4" />
+      <div className="landing-hero">
+        <div className="landing-hero-bg" aria-hidden="true">
+          <img
+            src={heroImg}
+            alt=""
+            className="landing-hero-img"
+          />
         </div>
 
-        {/* navs for lessons, boarding, and stablesign up */}
-        <div className="hero-ctas">
-          <Link to="/search" className="btn-cta big">Find Riding Lessons or Boarding Services</Link>
-          <Link to="/stableSignUp" className="btn-cta big">I’m a Stable Owner</Link>
+        <div className="landing-hero-inner container">
+          <header className="hero">
+            <h1 className="hero-title">SADDLESYNC</h1>
+
+            <p className="hero-subtitle">
+              Connect with local stables, lessons, and boarding when life moves you.
+            </p>
+
+            <div className="hero-ctas">
+              <Link to="/search" className="btn-cta big">
+                Find Riding Lessons or Boarding Services
+              </Link>
+              <Link to="/stableSignUp" className="btn-cta big">
+                I&apos;m a Stable Owner
+              </Link>
+            </div>
+          </header>
         </div>
-      </header>
+      </div>
+
+      <div className="landing-content">
+        <div className="container">
+          <section className="landing-description">
+            <h2 className="landing-description-title">What is SaddleSync?</h2>
+            <p className="landing-description-body">
+              SaddleSync helps riders and horse owners quickly get oriented in a new area.
+              Whether moving to a new city or exploring a new hobby, it brings together
+              local lesson programs, boarding options, and stable details in one place.
+            </p>
+            <p className="landing-description-body">
+              Riders can browse stables, compare services, and reach out for lessons or
+              boarding. Stable owners can showcase their barns, horses, and offerings so
+              the right clients can find them more easily.
+            </p>
+          </section>
+
+          {featured.length > 0 && (
+            <section className="landing-featured">
+              <h3 className="landing-featured-title">Featured stables</h3>
+              <div className="landing-featured-grid">
+                {featured.map((stable) => (
+                  <article key={stable.StableID} className="landing-featured-card">
+                    <h4 className="landing-featured-name">{stable.StableName}</h4>
+                    <p className="landing-featured-location">
+                      {stable.City}, {stable.State}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

@@ -32,7 +32,7 @@ export default function NavigationBar() {
       <nav className="nav container">
         <Link to="/" className="brand--light">
           <img src={logo} alt="SaddleSync" className="logo" />
-          <span className="brand-text">SaddleSync</span>
+          <span className="brand-text">SADDLESYNC</span>
         </Link>
 
         <div className="actions">

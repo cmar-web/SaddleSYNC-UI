@@ -1,13 +1,12 @@
 :root {
-  --nav-bg: #6b7b59;  /* olive green bar */
-  --cta: #5a3a21;     /* brown btn */
-  --cta-tx: #ffffff;  /* white text */
+  --cta-tx: #19301e; 
 }
 
 .nav-header {
   background: var(--nav-bg);
-  width: 100%;
-  padding: 0.5rem 0;
+  color: #19301e;
+  padding: 2rem 0;
+
 }
 
 .nav-header nav.nav {
@@ -26,19 +25,21 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: white;
+  color: #19301e;
   text-decoration: none;
 }
 
 .logo {
   width: 45px;
-  height: auto;
+  height: auto; /* shoddy way of making it white for now*/
+  filter: grayscale(100%) brightness(5);
+
 }
 
 .brand-text {
   font-size: 1.4rem;
   font-weight: 600;
-  color: white;
+  color: #19301e;
 }
 
 .actions {
@@ -56,7 +57,7 @@
 }
 
 .btn-light {
-  background: white;
+  background: #19301e;
   color: var(--cta);
   font-weight: 600;
 }
@@ -98,7 +99,7 @@
   padding: 0.4rem 0.7rem;
   border-radius: 4px;
   text-decoration: none;
-  color: white;
+  color: #19301e;
 }
 
 .user-badge__label {

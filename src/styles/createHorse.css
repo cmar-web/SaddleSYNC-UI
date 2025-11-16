@@ -1,166 +1,246 @@
-:root{
-  --bg:#f4f6ef;
-  --ink:#2a2a2a;
-  --muted:#6a6a6a;
-
-  --green-700:#6b7b59;
-  --green-500:#7c966d;
-  --green-200:#eaf2de;
-
-  --brown-700:#5b4222;
-
-  --line:#dfe6d6;
-  --input:#cfd6c7;
-
-  --radius:12px;
-  --shadow:0 2px 6px rgba(0,0,0,.06);
+.horse-form {
+  margin-top: 1.5rem;
 }
 
-.horse-create{
-  background:var(--bg);
-  min-height:calc(100vh - 120px);
-  padding:24px 20px 56px;
-  color:var(--ink);
-  display:flex;
-  justify-content:center;
+.horse-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: nowrap;
 }
 
-.horse-grid{
-  width:100%;
-  max-width:1180px;
-  display:grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
-  grid-template-rows: auto auto auto 1fr auto;
-  gap:16px;
+.horse-left {
+  flex: 0 0 320px;
+  max-width: 360px;
 }
 
-.panel{
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:12px;
-  box-shadow:var(--shadow);
+.horse-right {
+  flex: 1 1 auto;
+  max-width: 540px;
 }
 
-.photo-panel{
-  grid-column:1 / 2;
-  grid-row:1 / 5;
-  padding:16px;
-}
-.photo-drop{
-  height:100%;
-  border:2px solid var(--input);
-  border-radius:14px;
-  display:grid;
-  place-items:center;
-  background:#fff;
-}
-.photo-drop input{ display:none; }
-.photo-prompt{
-  display:inline-block;
-  padding:10px 14px;
-  border-radius:10px;
-  border:1px dashed var(--input);
-  color:var(--muted);
-  cursor:pointer;
-  font-weight:600;
+.form-section {
+  margin-bottom: 1.75rem;
 }
 
-.label{
-  display:block;
-  font-size:.93rem;
-  font-weight:800;
-  color:#2f402a;
-  margin:2px 0 6px;
-}
-.mt{ margin-top:10px; }
-
-.input, .textarea{
-  width:100%;
-  border:1px solid var(--input);
-  border-radius:10px;
-  background:#fff;
-  padding:10px 12px;
-  font-size:.95rem;
-}
-.input:focus, .textarea:focus{
-  outline:none;
-  border-color:var(--green-500);
-  box-shadow:0 0 0 3px rgba(124,150,109,.22);
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
 }
 
-.textarea{ resize:none; }
-
-.list-panel{
-  display:grid;
-  grid-template-rows: auto 1fr auto;
-  gap:8px;
-}
-.list-head{
-  background:var(--green-200);
-  color:#2f402a;
-  border-radius:8px;
-  padding:8px 10px;
-  font-weight:800;
-}
-.list-body{ display:grid; gap:8px; }
-.list-actions{
-  display:flex; gap:8px; justify-content:flex-start;
-}
-.btn.icon{
-  width:34px; height:34px; border-radius:8px; border:0;
-  display:grid; place-items:center; font-weight:900; cursor:pointer;
-}
-.btn.icon.add{ background:var(--green-700); color:#fff; }
-.btn.icon.del{ background:#d33; color:#fff; }
-
-.date-row{ display:flex; gap:8px; }
-
-.notes-panel{ grid-column:2 / 4; grid-row:3 / 5; }
-
-.actions{
-  grid-column:2 / 4;
-  display:flex; justify-content:center; align-items:center;
-  margin-top:4px;
+.section-subtitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
-.btn-brown{
-  background:var(--brown-700);
-  color:#fff;
-  border:0;
-  padding:12px 18px;
-  border-radius:12px;
-  font-weight:800;
-  letter-spacing:.2px;
-  cursor:pointer;
-  width:100%;
-  max-width:360px;
-  box-shadow:0 4px 0 rgba(46,31,15,.25);
+/* image upload block */
+
+.image-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.panel:nth-of-type(2){ grid-column:2 / 4; }       /* temp */
-.panel:nth-of-type(3){ grid-column:2 / 3; }       /* likes */
-.panel:nth-of-type(4){ grid-column:3 / 4; }       /* dislikes */
-.panel:nth-of-type(5){ grid-column:2 / 3; }       /* name and age*/
-.panel:nth-of-type(6){ grid-column:3 / 4; }       /* dob */
+.image-drop {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 0.75rem;
+  border: 1px dashed #d0d0d0;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.image-drop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.image-placeholder-text {
+  font-size: 0.9rem;
+  color: #777;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+/* hide default input and style custom trigger for upload btn cause its ugly */
+
+.hidden-file-input {
+  display: none;
+}
+
+.custom-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: #5a3a21;
+  color: #ffffff;
+  border: 1px solid #4b301b;
+  transition: background-color 0.15s ease, transform 0.05s ease,
+    box-shadow 0.15s ease;
+}
+
+.custom-upload-button:hover {
+  background-color: #6b4427;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.custom-upload-button:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.field-help {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: -0.25rem;
+}
 
 
-@media (max-width: 1024px){
-  .horse-grid{
-    grid-template-columns:1fr 1fr;
-    grid-template-rows:auto auto auto auto auto auto;
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.field-inline {
+  display: flex;
+  gap: 1rem;
+}
+
+.field-inline .field {
+  flex: 1 1 0;
+}
+
+.field label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+
+.field input {
+  border-radius: 0.5rem;
+  border: 1px solid #d0d0d0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  outline: none;
+  max-width: 280px;
+}
+
+.tag-input-row input {
+  max-width: 260px;
+}
+
+
+
+.field textarea {
+  border-radius: 0.5rem;
+  border: 1px solid #d0d0d0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  outline: none;
+  min-height: 120px;
+  resize: vertical;
+}
+
+.field--wide textarea {
+  max-width: 100%;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: #6b7b59;
+  box-shadow: 0 0 0 1px rgba(107, 123, 89, 0.2);
+}
+
+.form-section--split {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.form-subsection {
+  flex: 1 1 0;
+}
+
+/* tags */
+
+.tag-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tag-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #f0f0f0;
+  font-size: 0.85rem;
+}
+
+.tag-remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0;
+}
+
+/* actions */
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* responsive */
+
+@media (max-width: 900px) {
+  .horse-layout {
+    flex-direction: column;
   }
-  .photo-panel{ grid-row:auto; grid-column:1 / -1; height:340px; }
-  .notes-panel{ grid-column:1 / -1; }
-  .actions{ grid-column:1 / -1; }
-  .panel:nth-of-type(2),
-  .panel:nth-of-type(3),
-  .panel:nth-of-type(4),
-  .panel:nth-of-type(5),
-  .panel:nth-of-type(6){ grid-column:auto; }
-}
 
-@media (max-width: 640px){
-  .horse-grid{ grid-template-columns:1fr; }
-  .photo-panel{ height:300px; }
+  .horse-left {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+
+  .horse-right {
+    max-width: 100%;
+  }
+
+  .form-section--split {
+    flex-direction: column;
+  }
+
+  .field input,
+  .tag-input-row input {
+    max-width: 100%;
+  }
 }
