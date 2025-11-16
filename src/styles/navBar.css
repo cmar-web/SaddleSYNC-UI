@@ -95,6 +95,7 @@
 .user-badge {
   background: white;
   display: flex;
+  flex-wrap: nowrap;
   flex-direction: column;
   padding: 0.4rem 0.7rem;
   border-radius: 4px;

@@ -21,13 +21,31 @@ export default function StableSignUp() {
 
   if (!userId) {
     return (
-      <section className="container auth">
-        <h1 className="auth-title">Register your stable</h1>
-        <div className="card" style={{ padding: "1rem" }}>
-          <p>You need to be logged in to create a stable.</p>
-          <p className="form-actions">
-            <Link className="btn-brown" to="/login">Log in</Link>
-            <Link className="btn btn-light" to="/userSignUp">Create an account</Link>
+      <section className="unauth-container">
+        <div className="unauth-inner">
+          <h1 className="unauth-header">Put your stable on the SaddleSync map</h1>
+          <p className="unauth-subtitle">
+            Create a free stable profile so riders can discover your lessons and boarding
+            options when they move to a new area or look for somewhere new to ride.
+          </p>
+
+          <ul className="unauth-list">
+            <li>Show up when riders search for lessons or boarding near your city.</li>
+            <li>Highlight disciplines, lesson levels, and boarding options you offer.</li>
+            <li>Keep your contact details and offerings in one easy-to-update place.</li>
+          </ul>
+
+          <div className="unauth-actions">
+            <Link className="btn btn-light" to="/userSignUp">
+              Create stable owner account
+            </Link>
+            <Link className="btn btn-light" to="/login">
+              I already have an account
+            </Link>
+          </div>
+
+          <p className="unauth-footnote">
+            Just here to browse? <Link to="/search">Explore stables near you</Link>.
           </p>
         </div>
       </section>
@@ -41,7 +59,7 @@ export default function StableSignUp() {
   const [stateVal, setStateVal]     = useState("");
   const [zip, setZip]               = useState("");
   const [email, setEmail]           = useState(user?.Email || "");
-  const [offers, setOffers]         = useState([]); // selected offers
+  const [offers, setOffers]         = useState([]); 
 
   const [submitting, setSubmitting] = useState(false);
   const [phase, setPhase] = useState("");
@@ -104,7 +122,7 @@ export default function StableSignUp() {
         State: std.state,
         Zipcode: formatZip(std.zip5, std.zip4),
         Email: email.trim(),
-        Offers: offers.join(","), // important line
+        Offers: offers.join(","),
       };
 
       const r = await fetch(API, {
@@ -159,150 +177,154 @@ export default function StableSignUp() {
   }
 
   return (
-    <section className="container auth">
-      <h1 className="auth-title">Register your stable</h1>
-      <p className="auth-subtitle">Tell riders how to find you</p>
+    <section className="auth-stable-container">
+      <div className="auth-stable-inner">
+        <header className="auth-stable-header">
+          <h1 className="auth-title">Register your stable</h1>
+          <p className="auth-subtitle">Tell riders how to find you</p>
+        </header>
 
-      <form className="card form-card" onSubmit={onSubmit} noValidate>
-        <div className="form-grid">
+        <form className="card form-card" onSubmit={onSubmit} noValidate>
+          <div className="form-grid">
 
-          <div className="form-row">
-            <label htmlFor="stableName" className="label">
-              Stable name <span className="req">*</span>
-            </label>
-            <input
-              id="stableName"
-              className="input"
-              placeholder="Enter stable name..."
-              value={stableName}
-              onChange={(e) => setStableName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-row cols-2">
-            <div>
-              <label htmlFor="phone" className="label">Phone</label>
-              <input
-                id="phone"
-                className="input"
-                placeholder="Enter stable phone number..."
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                inputMode="tel"
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="label">
-                Email <span className="req">*</span>
+            <div className="form-row">
+              <label htmlFor="stableName" className="label">
+                Stable name <span className="req">*</span>
               </label>
               <input
-                id="email"
+                id="stableName"
                 className="input"
-                type="email"
-                placeholder="Enter stable email..."
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter stable name..."
+                value={stableName}
+                onChange={(e) => setStableName(e.target.value)}
                 required
-                autoComplete="email"
               />
             </div>
-          </div>
 
-          <div className="form-row">
-            <span className="label">Offers</span>
-            <div className="offers-row">
-              {OFFER_OPTIONS.map(opt => (
-                <label key={opt} className="offers-pill">
-                  <input
-                    type="checkbox"
-                    checked={offers.includes(opt)}
-                    onChange={() => toggleOffer(opt)}
-                  />
-                  <span>{opt}</span>
+            <div className="form-row cols-2">
+              <div>
+                <label htmlFor="phone" className="label">Phone</label>
+                <input
+                  id="phone"
+                  className="input"
+                  placeholder="Enter stable phone number..."
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  inputMode="tel"
+                />
+              </div>
+              <div>
+                <label htmlFor="email" className="label">
+                  Email <span className="req">*</span>
                 </label>
-              ))}
+                <input
+                  id="email"
+                  className="input"
+                  type="email"
+                  placeholder="Enter stable email..."
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="form-row">
-            <label htmlFor="address" className="label">
-              Address <span className="req">*</span>
-            </label>
-            <input
-              id="address"
-              className="input"
-              placeholder="Enter address..."
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-              autoComplete="street-address"
-            />
-          </div>
+            <div className="form-row">
+              <span className="label">Offers</span>
+              <div className="offers-row">
+                {OFFER_OPTIONS.map(opt => (
+                  <label key={opt} className="offers-pill">
+                    <input
+                      type="checkbox"
+                      checked={offers.includes(opt)}
+                      onChange={() => toggleOffer(opt)}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
-          <div className="form-row cols-3">
-            <div>
-              <label htmlFor="city" className="label">
-                City <span className="req">*</span>
+            <div className="form-row">
+              <label htmlFor="address" className="label">
+                Address <span className="req">*</span>
               </label>
               <input
-                id="city"
+                id="address"
                 className="input"
-                placeholder="Enter city..."
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+                placeholder="Enter address..."
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
                 required
-                autoComplete="address-level2"
+                autoComplete="street-address"
               />
             </div>
-            <div>
-              <label htmlFor="state" className="label">
-                State <span className="req">*</span>
-              </label>
-              <select
-                id="state"
-                className="input select"
-                value={stateVal}
-                onChange={(e) => setStateVal(e.target.value)}
-                required
-                autoComplete="address-level1"
-              >
-                <option value="">Select</option>
-                {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+
+            <div className="form-row cols-3">
+              <div>
+                <label htmlFor="city" className="label">
+                  City <span className="req">*</span>
+                </label>
+                <input
+                  id="city"
+                  className="input"
+                  placeholder="Enter city..."
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                  autoComplete="address-level2"
+                />
+              </div>
+              <div>
+                <label htmlFor="state" className="label">
+                  State <span className="req">*</span>
+                </label>
+                <select
+                  id="state"
+                  className="input select"
+                  value={stateVal}
+                  onChange={(e) => setStateVal(e.target.value)}
+                  required
+                  autoComplete="address-level1"
+                >
+                  <option value="">Select</option>
+                  {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="zip" className="label">
+                  Zip <span className="req">*</span>
+                </label>
+                <input
+                  id="zip"
+                  className="input"
+                  placeholder="Enter zipcode..."
+                  value={zip}
+                  onChange={(e) => setZip(e.target.value)}
+                  required
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                />
+              </div>
             </div>
-            <div>
-              <label htmlFor="zip" className="label">
-                Zip <span className="req">*</span>
-              </label>
-              <input
-                id="zip"
-                className="input"
-                placeholder="Enter zipcode..."
-                value={zip}
-                onChange={(e) => setZip(e.target.value)}
-                required
-                inputMode="numeric"
-                autoComplete="postal-code"
-              />
+
+            <div className="form-actions">
+              <button className="btn btn-light" type="submit" disabled={submitting}>
+                {phase === "validating" ? "Validating…" :
+                 phase === "creating"   ? "Creating…"   :
+                 phase === "saving"     ? "Saving address…" :
+                 "Create stable"}
+              </button>
+              {error && <div className="form-error" role="alert">{error}</div>}
             </div>
           </div>
+        </form>
 
-          <div className="form-actions">
-            <button className="btn-brown" type="submit" disabled={submitting}>
-              {phase === "validating" ? "Validating…" :
-               phase === "creating"   ? "Creating…"   :
-               phase === "saving"     ? "Saving address…" :
-               "Create stable"}
-            </button>
-            {error && <div className="form-error" role="alert">{error}</div>}
-          </div>
-        </div>
-      </form>
-
-      <p className="form-note">
-        Changed your mind? <Link to="/">Go back home</Link>.
-      </p>
+        <p className="form-note">
+          Changed your mind? <Link to="/">Go back home</Link>.
+        </p>
+      </div>
     </section>
   );
 }
