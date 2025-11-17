@@ -54,124 +54,130 @@ export default function UserSignUp() {
   }
 
   return (
-    <section className="container auth">
-      <h1 className="auth-title">Create your account</h1>
-      <p className="auth-subtitle">Rider / regular user sign up</p>
+    <section className="user-signup-container">
+      <div className="user-signup-inner">
+        <header className="user-signup-header">
+          <h1 className="auth-title">Create your account</h1>
+          <p className="auth-subtitle">
+            Set up a rider profile to find lessons and stables faster.
+          </p>
+        </header>
 
-      <form onSubmit={onSubmit} className="card form-card" noValidate>
-        <div className="form-grid">
-          <div className="form-row cols-2">
-            <div>
-              <label htmlFor="username" className="label">
-                Username <span className="req">*</span>
-              </label>
-              <input
-                id="username"
-                className="input"
-                placeholder="Enter a username..."
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="label">
-                Password <span className="req">*</span>
-              </label>
-              <input
-                id="password"
-                className="input"
-                type="password"
-                placeholder="Enter a password..."
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="form-row cols-2">
-            <div>
-              <label htmlFor="firstName" className="label">First name</label>
-              <input
-                id="firstName"
-                className="input"
-                placeholder="Enter first name..."
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                autoComplete="given-name"
-              />
-            </div>
-            <div>
-              <label htmlFor="lastName" className="label">Last name</label>
-              <input
-                id="lastName"
-                className="input"
-                placeholder="Enter last name..."
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                autoComplete="family-name"
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <label htmlFor="email" className="label">Email</label>
-            <input
-              id="email"
-              className="input"
-              type="email"
-              placeholder="Enter email..."
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="form-row cols-2">
-            <div>
-              <label htmlFor="level" className="label">Level</label>
-              <select
-                id="level"
-                className="input select"
-                value={level}
-                onChange={(e) => setLevel(e.target.value)}
-              >
-                <option value="">Select level (optional)</option>
-                {LEVEL_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="toggle-cell">
-              <span className="label">Stable owner</span>
-              <label className="switch">
+        <form onSubmit={onSubmit} className="card form-card" noValidate>
+          <div className="form-grid">
+            <div className="form-row cols-2">
+              <div>
+                <label htmlFor="username" className="label">
+                  Username <span className="req">*</span>
+                </label>
                 <input
-                  id="stableOwner"
-                  type="checkbox"
-                  checked={stableOwner}
-                  onChange={(e) => setStableOwner(e.target.checked)}
+                  id="username"
+                  className="input"
+                  placeholder="Enter a username..."
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="username"
+                  required
                 />
-                <span className="slider" />
-              </label>
+              </div>
+              <div>
+                <label htmlFor="password" className="label">
+                  Password <span className="req">*</span>
+                </label>
+                <input
+                  id="password"
+                  className="input"
+                  type="password"
+                  placeholder="Enter a password..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row cols-2">
+              <div>
+                <label htmlFor="firstName" className="label">First name</label>
+                <input
+                  id="firstName"
+                  className="input"
+                  placeholder="Enter first name..."
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                />
+              </div>
+              <div>
+                <label htmlFor="lastName" className="label">Last name</label>
+                <input
+                  id="lastName"
+                  className="input"
+                  placeholder="Enter last name..."
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  autoComplete="family-name"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <label htmlFor="email" className="label">Email</label>
+              <input
+                id="email"
+                className="input"
+                type="email"
+                placeholder="Enter email..."
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="form-row cols-2">
+              <div>
+                <label htmlFor="level" className="label">Riding level</label>
+                <select
+                  id="level"
+                  className="input select"
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value)}
+                >
+                  <option value="">Select level (optional)</option>
+                  {LEVEL_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="toggle-cell">
+                <span className="label">I&apos;m a stable owner</span>
+                <label className="switch">
+                  <input
+                    id="stableOwner"
+                    type="checkbox"
+                    checked={stableOwner}
+                    onChange={(e) => setStableOwner(e.target.checked)}
+                  />
+                  <span className="slider" />
+                </label>
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button className="btn-brown" disabled={submitting} type="submit">
+                {submitting ? "Creating…" : "Sign up"}
+              </button>
+              {error && <div className="form-error" role="alert">{error}</div>}
             </div>
           </div>
+        </form>
 
-          <div className="form-actions">
-            <button className="btn-brown" disabled={submitting} type="submit">
-              {submitting ? "Creating…" : "Sign up"}
-            </button>
-            {error && <div className="form-error" role="alert">{error}</div>}
-          </div>
-        </div>
-      </form>
-
-      <p className="form-note">
-        Already have an account? <Link to="/login">Log in</Link>.
-      </p>
+        <p className="form-note user-signup-note">
+          Already have an account? <Link to="/login">Log in</Link>.
+        </p>
+      </div>
     </section>
   );
 }

@@ -124,20 +124,17 @@ body {
 }
 
 /* Brown primary button */
-.btn-brown {
-  background: var(--cta);
-  color: var(--cta-tx);
-  border: 1px solid #000;
-  border-radius: .75rem;
-  padding: .7rem 1rem;
-  font-weight: 700;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 10rem;
-  box-shadow: 4px 4px 0 #000;
-  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+.btn-brown{
+  background:var(--brown-700);
+  color:var(--brown);
+  border:1px solid var(--brown);
+  padding:12px 18px;
+  border-radius:12px;
+  font-weight:800;
+  letter-spacing:.2px;
+  cursor:pointer;
+  box-shadow:0 4px 0 rgba(46,31,15,.25);
+  transition:transform .02s ease, box-shadow .2s ease, opacity .2s ease;
 }
 .btn-brown:hover {
   filter: brightness(1.05);
