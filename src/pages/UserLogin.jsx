@@ -32,76 +32,92 @@ export default function Login() {
   }
 
   return (
-    <section className="container auth">
-      <h1 className="auth-title">Welcome back!</h1>
-      <p className="auth-subtitle">Log in to continue</p>
+    <section className="user-login-container">
+      <div className="user-login-inner">
+        <header className="user-login-header">
+          <h1 className="auth-title">Welcome back</h1>
+          <p className="auth-subtitle">
+            Log in to see your profile, horses, and saved stables.
+          </p>
+        </header>
 
-      <form className="card form-card" onSubmit={onSubmit} noValidate>
-        <div className="form-grid">
-          {error && <div className="form-error" role="alert">{error}</div>}
+        <form className="card form-card" onSubmit={onSubmit} noValidate>
+          <div className="form-grid">
+            {error && (
+              <div className="form-error" role="alert">
+                {error}
+              </div>
+            )}
 
-          <div className="form-row">
-            <label htmlFor="username" className="label">Username</label>
-            <input
-              id="username"
-              className="input"
-              type="text"
-              inputMode="text"
-              autoComplete="username"
-              placeholder="Enter username..."
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={loading}
-              required
-            />
-          </div>
-
-          <div className="form-row">
-            <label htmlFor="password" className="label">Password</label>
-            <div className="password-wrap">
+            <div className="form-row">
+              <label htmlFor="username" className="label">
+                Username
+              </label>
               <input
-                id="password"
+                id="username"
                 className="input"
-                type={showPass ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                type="text"
+                inputMode="text"
+                autoComplete="username"
+                placeholder="Enter username..."
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 disabled={loading}
                 required
               />
+            </div>
+
+            <div className="form-row">
+              <label htmlFor="password" className="label">
+                Password
+              </label>
+              <div className="password-wrap">
+                <input
+                  id="password"
+                  className="input"
+                  type={showPass ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  aria-label={showPass ? "Hide password" : "Show password"}
+                  onClick={() => setShowPass((s) => !s)}
+                >
+                  {showPass ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+
+            <div className="row between">
+              <label className="checkbox">
+                <input type="checkbox" disabled={loading} /> Remember me
+              </label>
+              <Link to="/forgot" className="link-strong">
+                Forgot password?
+              </Link>
+            </div>
+
+            <div className="form-actions">
               <button
-                type="button"
-                className="ghost-btn"
-                aria-label={showPass ? "Hide password" : "Show password"}
-                onClick={() => setShowPass((s) => !s)}
+                className="btn-brown"
+                disabled={loading || !username || !password}
               >
-                {showPass ? "Hide" : "Show"}
+                {loading ? "Logging in…" : "Log in"}
               </button>
             </div>
           </div>
+        </form>
 
-          <div className="row between">
-            <label className="checkbox">
-              <input type="checkbox" disabled={loading} /> Remember me
-            </label>
-            <Link to="/forgot" className="link-strong">Forgot password?</Link>
-          </div>
-
-          <div className="form-actions">
-            <button
-              className="btn-brown"
-              disabled={loading || !username || !password}
-            >
-              {loading ? "Logging in…" : "Log in"}
-            </button>
-          </div>
-        </div>
-      </form>
-
-      <p className="form-note">
-        Need an account? <Link to="/userSignUp">Sign up</Link>.
-      </p>
+        <p className="form-note user-login-note">
+          Need an account? <Link to="/userSignUp">Sign up</Link>.
+        </p>
+      </div>
     </section>
   );
 }
