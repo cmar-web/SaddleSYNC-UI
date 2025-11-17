@@ -24,6 +24,7 @@ export default function CreateHorse() {
     temperament: "",
     breed: "",
     notes: "",
+    sex: "",
   });
 
   const [likes, setLikes] = useState([]);
@@ -86,6 +87,7 @@ export default function CreateHorse() {
     }
   }
 
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -96,279 +98,298 @@ export default function CreateHorse() {
       return;
     }
 
-    const fd = new FormData();
-    fd.append("name", trimmedName);
-
-    if (form.birthday) fd.append("birthday", form.birthday);
-    if (form.age) fd.append("age", String(Number(form.age)));
-    if (form.temperament.trim()) fd.append("temperament", form.temperament.trim());
-    if (form.breed.trim()) fd.append("breed", form.breed.trim());
-    if (form.notes.trim()) fd.append("notes", form.notes.trim());
-
-    if (likes.length) fd.append("likes", likes.join(", "));
-    if (dislikes.length) fd.append("dislikes", dislikes.join(", "));
-
-    fd.append("ownerId", String(user.UserID));
-
-    if (imageFile) {
-      fd.append("image", imageFile);
+    if (!form.birthday) {
+      setError("Birthday is required.");
+      return;
     }
+
+    const payload = {
+      Name: trimmedName,
+      DOB: form.birthday,
+      Temperament: form.temperament.trim() || null,
+      Sex: form.sex ? form.sex.toLowerCase() : null,
+    };
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API}/horses`, {
+      const res = await fetch(`${API}/users/${user.UserID}/horses`, {
         method: "POST",
         headers: {
+          "Content-Type": "application/json",
           Authorization: user.token ? `Bearer ${user.token}` : "",
         },
-        body: fd,
+        body: JSON.stringify(payload),
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.message || "Unable to create horse.");
+        setError(data?.message || "Unable to create horse.");
         setSubmitting(false);
         return;
       }
 
-      const created = await res.json().catch(() => null);
 
-      if (created && created.HorseID) {
-        navigate(`/horses/${created.HorseID}`);
-      } else {
-        navigate("/horses");
-      }
+      navigate(`/users/${user.UserID}`);
     } catch {
       setError("Network error while creating horse.");
       setSubmitting(false);
     }
   }
 
+
   return (
-    <main className="page page--wide">
-      <h1>Add a Horse</h1>
+    <main className="add-horse-container">
+      <div className="add-horse-inner">
+        <h1>Add a Horse</h1>
 
-      {error && <div className="form-error">{error}</div>}
+        {error && <div className="form-error">{error}</div>}
 
-      <form className="card form horse-form" onSubmit={handleSubmit}>
-        <div className="horse-layout">
-          <div className="horse-left">
-            <section className="form-section">
-              <h2 className="section-title">Photo</h2>
+        <form className="card form horse-form" onSubmit={handleSubmit}>
+          <div className="horse-layout">
+            <div className="horse-left">
+              <section className="form-section">
+                <h2 className="section-title">Photo</h2>
 
-              <div className="image-upload">
-                <div className="image-drop">
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="Horse preview" />
-                  ) : (
-                    <span className="image-placeholder-text">
-                      Add a photo to help riders recognize this horse
-                    </span>
-                  )}
+                <div className="image-upload">
+                  <div className="image-drop">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Horse preview" />
+                    ) : (
+                      <span className="image-placeholder-text">
+                        Add a photo to help riders recognize this horse
+                      </span>
+                    )}
+                  </div>
+
+                  <label
+                    htmlFor="horse-image"
+                    className="custom-upload-button"
+                  >
+                    Choose photo
+                  </label>
+                  <input
+                    id="horse-image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden-file-input"
+                  />
+
+                  <p className="field-help">JPG or PNG, up to 10MB.</p>
+                </div>
+              </section>
+
+              <section className="form-section">
+                <div className="field">
+                  <label htmlFor="horse-name">My name is...</label>
+                  <input
+                    id="horse-name"
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => updateField("name", e.target.value)}
+                    required
+                    placeholder="Enter horse's name..."
+                  />
+                </div>
+              </section>
+            </div>
+
+            <div className="horse-right">
+              <section className="form-section">
+                <h2 className="section-title">Basic info</h2>
+
+                <div className="field-inline">
+                  <div className="field">
+                    <label htmlFor="horse-birthday">My Birthday is...</label>
+                    <input
+                      id="horse-birthday"
+                      type="date"
+                      value={form.birthday}
+                      onChange={(e) => updateField("birthday", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="horse-age">I am </label>
+                    <input
+                      id="horse-age"
+                      type="number"
+                      min="0"
+                      value={form.age}
+                      onChange={(e) => updateField("age", e.target.value)}
+                      placeholder="years old..."
+                    />
+                  </div>
                 </div>
 
-                <label htmlFor="horse-image" className="custom-upload-button">
-                  Choose photo
-                </label>
-                <input
-                  id="horse-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden-file-input"
-                />
-
-                <p className="field-help">JPG or PNG, up to 10MB.</p>
-              </div>
-            </section>
-
-            <section className="form-section">
-              <div className="field">
-                <label htmlFor="horse-name">My name is...</label>
-                <input
-                  id="horse-name"
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => updateField("name", e.target.value)}
-                  required
-                  placeholder="Enter horse's name..."
-                />
-              </div>
-            </section>
-          </div>
-
-          <div className="horse-right">
-            <section className="form-section">
-              <h2 className="section-title">Basic info</h2>
-
-              <div className="field-inline">
                 <div className="field">
-                  <label htmlFor="horse-birthday">My Birthday is...</label>
+                  <label htmlFor="horse-breed">I am a...</label>
                   <input
-                    id="horse-birthday"
-                    type="date"
-                    value={form.birthday}
-                    onChange={(e) => updateField("birthday", e.target.value)}
+                    id="horse-breed"
+                    type="text"
+                    value={form.breed}
+                    onChange={(e) => updateField("breed", e.target.value)}
+                    placeholder="Enter breed..."
                   />
                 </div>
 
                 <div className="field">
-                  <label htmlFor="horse-age">I am </label>
+                  <label htmlFor="horse-sex">Sex</label>
+                  <select
+                    id="horse-sex"
+                    value={form.sex}
+                    onChange={(e) => updateField("sex", e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    <option value="mare">Mare</option>
+                    <option value="gelding">Gelding</option>
+                    <option value="stallion">Stallion</option>
+                    <option value="filly">Filly</option>
+                    <option value="colt">Colt</option>
+                  </select>
+                </div>
+              </section>
+
+              <section className="form-section">
+                <h2 className="section-title">Personality</h2>
+
+                <div className="field">
+                  <label htmlFor="horse-temperament">Temperament</label>
                   <input
-                    id="horse-age"
-                    type="number"
-                    min="0"
-                    value={form.age}
-                    onChange={(e) => updateField("age", e.target.value)}
-                    placeholder="years old..."
+                    id="horse-temperament"
+                    type="text"
+                    placeholder="Ex: Gentle, bold, etc..."
+                    value={form.temperament}
+                    onChange={(e) =>
+                      updateField("temperament", e.target.value)
+                    }
                   />
                 </div>
-              </div>
+              </section>
 
-              <div className="field">
-                <label htmlFor="horse-breed">I am a...</label>
-                <input
-                  id="horse-breed"
-                  type="text"
-                  value={form.breed}
-                  onChange={(e) => updateField("breed", e.target.value)}
-                  placeholder="Enter breed..."
-                />
-              </div>
-            </section>
-
-            <section className="form-section">
-              <h2 className="section-title">Personality</h2>
-
-              <div className="field">
-                <label htmlFor="horse-temperament">Temperament</label>
-                <input
-                  id="horse-temperament"
-                  type="text"
-                  placeholder="Ex: Gentle, bold, etc..."
-                  value={form.temperament}
-                  onChange={(e) => updateField("temperament", e.target.value)}
-                />
-              </div>
-            </section>
-
-            <section className="form-section form-section--split">
-              <div className="form-subsection">
-                <h3 className="section-subtitle">Likes</h3>
-                <div className="field">
-                  <div className="tag-input-row">
-                    <input
-                      type="text"
-                      value={likeInput}
-                      onChange={(e) => setLikeInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addLike();
-                        }
-                      }}
-                      placeholder="Ex: Carrots, trail rides, etc."
-                    />
-                <label htmlFor="add-like" className="custom-upload-button">
-                  +
-                </label>
-                <input
-                  onClick={addLike}
-                  className="hidden-file-input"
-                />
+              <section className="form-section form-section--split">
+                <div className="form-subsection">
+                  <h3 className="section-subtitle">Likes</h3>
+                  <div className="field">
+                    <div className="tag-input-row">
+                      <input
+                        type="text"
+                        value={likeInput}
+                        onChange={(e) => setLikeInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addLike();
+                          }
+                        }}
+                        placeholder="Ex: Carrots, trail rides, etc."
+                      />
+                      <button
+                        type="button"
+                        className="custom-upload-button"
+                        onClick={addLike}
+                      >
+                        +
+                      </button>
+                    </div>
+                    {likes.length > 0 && (
+                      <ul className="tag-list">
+                        {likes.map((item) => (
+                          <li key={item} className="tag-pill">
+                            <span>{item}</span>
+                            <button
+                              type="button"
+                              className="tag-remove"
+                              onClick={() => removeLike(item)}
+                            >
+                              ×
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  {likes.length > 0 && (
-                    <ul className="tag-list">
-                      {likes.map((item) => (
-                        <li key={item} className="tag-pill">
-                          <span>{item}</span>
-                          <button
-                            type="button"
-                            className="tag-remove"
-                            onClick={() => removeLike(item)}
-                          >
-                            ×
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
-              </div>
 
-              <div className="form-subsection">
-                <h3 className="section-subtitle">Dislikes</h3>
-                <div className="field">
-                  <div className="tag-input-row">
-                    <input
-                      type="text"
-                      value={dislikeInput}
-                      onChange={(e) => setDislikeInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addDislike();
-                        }
-                      }}
-                      placeholder="Ex: Loud noises, fly spray, etc."
-                    />
-                <label htmlFor="add-dislike" className="custom-upload-button">
-                  +
-                </label>
-                <input
-                  onClick={addDislike}
-                  className="hidden-file-input"
-                />
+                <div className="form-subsection">
+                  <h3 className="section-subtitle">Dislikes</h3>
+                  <div className="field">
+                    <div className="tag-input-row">
+                      <input
+                        type="text"
+                        value={dislikeInput}
+                        onChange={(e) => setDislikeInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addDislike();
+                          }
+                        }}
+                        placeholder="Ex: Loud noises, fly spray, etc."
+                      />
+                      <button
+                        type="button"
+                        className="custom-upload-button"
+                        onClick={addDislike}
+                      >
+                        +
+                      </button>
+                    </div>
+                    {dislikes.length > 0 && (
+                      <ul className="tag-list">
+                        {dislikes.map((item) => (
+                          <li key={item} className="tag-pill">
+                            <span>{item}</span>
+                            <button
+                              type="button"
+                              className="tag-remove"
+                              onClick={() => removeDislike(item)}
+                            >
+                              ×
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  {dislikes.length > 0 && (
-                    <ul className="tag-list">
-                      {dislikes.map((item) => (
-                        <li key={item} className="tag-pill">
-                          <span>{item}</span>
-                          <button
-                            type="button"
-                            className="tag-remove"
-                            onClick={() => removeDislike(item)}
-                          >
-                            ×
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
-              </div>
-            </section>
+              </section>
 
-            <section className="form-section">
-              <h2 className="section-title">Notes</h2>
-              <div className="field field--wide">
-                <textarea
-                  id="horse-notes"
-                  rows={4}
-                  value={form.notes}
-                  onChange={(e) => updateField("notes", e.target.value)}
-                  placeholder="Any additional information you'd want people to know about this horse..."
-                />
-              </div>
-            </section>
+              <section className="form-section">
+                <h2 className="section-title">Notes</h2>
+                <div className="field field--wide">
+                  <textarea
+                    id="horse-notes"
+                    rows={4}
+                    value={form.notes}
+                    onChange={(e) => updateField("notes", e.target.value)}
+                    placeholder="Any additional information you'd want people to know about this horse..."
+                  />
+                </div>
+              </section>
+            </div>
           </div>
-        </div>
 
-        <div className="form-actions">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => navigate(-1)}
-            disabled={submitting}
-          >
-            Cancel
-          </button>
-          <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "Saving…" : "Save horse"}
-          </button>
-        </div>
-      </form>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => navigate(-1)}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={submitting}
+            >
+              {submitting ? "Saving…" : "Save horse"}
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }

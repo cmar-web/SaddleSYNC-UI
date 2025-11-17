@@ -289,7 +289,7 @@ export default function Profile() {
               <section className="card">
                 <div className="section-head">
                   <h2 className="section-title">My Horses</h2>
-                  <Link to="/horses/new" className="btn-ghost">
+                  <Link to="/createHorse" className="btn-ghost">
                     + Add horse
                   </Link>
                 </div>

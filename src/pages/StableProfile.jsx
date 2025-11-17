@@ -1,4 +1,3 @@
-// src/pages/StableProfile.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../lib/auth";
@@ -264,16 +263,53 @@ export default function StableProfile() {
 
       <div className="sp-inner">
         <div className="sp-title-block">
-          <input className="sp-title" value={name} onChange={(e) => setName(e.target.value)} disabled={!isOwner} />
+          <input
+            className="sp-title"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={!isOwner}
+          />
+          <div className="sp-contact-line">
+            {email && <span className="sp-contact-email">{email}</span>}
+            {phone && (
+              <>
+                {email && <span className="sp-contact-sep">•</span>}
+                <span className="sp-contact-phone">{phone}</span>
+              </>
+            )}
+          </div>
           <div className="sp-sub">
-            <input className="sp-sub-line" placeholder="Address" value={address} onChange={(e) => setAddr(e.target.value)} disabled={!isOwner} />
+            <input
+              className="sp-sub-line"
+              placeholder="Address"
+              value={address}
+              onChange={(e) => setAddr(e.target.value)}
+              disabled={!isOwner}
+            />
             <div className="sp-sub-row">
-              <input className="sp-sub-city" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} disabled={!isOwner} />
-              <select className="sp-sub-state" value={stateVal} onChange={(e) => setSt(e.target.value)} disabled={!isOwner}>
+              <input
+                className="sp-sub-city"
+                placeholder="City"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                disabled={!isOwner}
+              />
+              <select
+                className="sp-sub-state"
+                value={stateVal}
+                onChange={(e) => setSt(e.target.value)}
+                disabled={!isOwner}
+              >
                 <option value="">State</option>
                 {STATES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-              <input className="sp-sub-zip" placeholder="Zip" value={zip} onChange={(e) => setZip(e.target.value)} disabled={!isOwner} />
+              <input
+                className="sp-sub-zip"
+                placeholder="Zip"
+                value={zip}
+                onChange={(e) => setZip(e.target.value)}
+                disabled={!isOwner}
+              />
             </div>
           </div>
         </div>
@@ -317,7 +353,14 @@ export default function StableProfile() {
 
             <div className="sp-card">
               <h3 className="sp-section">Announcements</h3>
-              <textarea className="sp-input sp-textarea" rows={6} placeholder="Share news or temporary notices…" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={!isOwner} />
+              <textarea
+                className="sp-input sp-textarea"
+                rows={6}
+                placeholder="Share news or temporary notices…"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={!isOwner}
+              />
             </div>
 
             <button className="sp-btn sp-btn-ghost sp-faq">
@@ -336,23 +379,38 @@ export default function StableProfile() {
           <div className="sp-right">
             <div className="sp-card">
               <h3 className="sp-section">About us</h3>
-              <textarea className="sp-input sp-textarea" rows={10} placeholder="info about stable, trainers, horses etc" value={about} onChange={(e) => setAbout(e.target.value)} disabled={!isOwner} />
+              <textarea
+                className="sp-input sp-textarea"
+                rows={10}
+                placeholder="info about stable, trainers, horses etc"
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
+                disabled={!isOwner}
+              />
             </div>
 
             <div className="sp-card">
               <div className="sp-horses-head">
                 <h3 className="sp-section">Our Horses</h3>
-                {isOwner && <Link className="sp-btn sp-btn-light" to={`/stables/${id}/horses/new`}>Add horse</Link>}
+                {isOwner && (
+                  <Link className="sp-btn sp-btn-light" to={`/stables/${id}/horses/new`}>
+                    Add horse
+                  </Link>
+                )}
               </div>
               <div className="sp-muted">No horses added yet.</div>
               <div className="sp-list-cta">
-                <Link className="sp-btn sp-btn-brown sp-btn-wide" to={`/stables/${id}/horses`}>See Full List</Link>
+                <Link className="sp-btn sp-btn-brown sp-btn-wide" to={`/stables/${id}/horses`}>
+                  See Full List
+                </Link>
               </div>
             </div>
           </div>
         </div>
 
-        {!isOwner && error && <div className="sp-err" style={{ marginTop: 8 }}>{error}</div>}
+        {!isOwner && error && (
+          <div className="sp-err" style={{ marginTop: 8 }}>{error}</div>
+        )}
       </div>
     </div>
   );
