@@ -1,32 +1,27 @@
-export default function MapEmbed({ stables = [], fallbackQuery = "USA" }) {
-  // If we have lat/lngs, center map by average 
-  // If none, fall back to a location search string 
+// src/components/MapEmbed.jsx
+export default function MapEmbed({ stables = [], fallbackQuery = "United States" }) {
+  const firstWithCoords = Array.isArray(stables)
+    ? stables.find(
+        s => typeof s.lat === "number" && typeof s.lng === "number"
+      )
+    : null;
+
   let src;
-  if (stables.length > 0) {
-    const { lat, lng } = stables.reduce(
-      (acc, s) => ({
-        lat: acc.lat + (typeof s.lat === "number" ? s.lat : 0),
-        lng: acc.lng + (typeof s.lng === "number" ? s.lng : 0),
-      }),
-      { lat: 0, lng: 0 }
-    );
-    const centerLat = lat / stables.length;
-    const centerLng = lng / stables.length;
-    const zoom = stables.length <= 3 ? 11 : 10;
-    // move to env l8r
-    src = `https://www.google.com/maps/@?api=1&map_action=map&center=${centerLat},${centerLng}&zoom=${zoom}`;
+  if (firstWithCoords) {
+    src = `https://www.google.com/maps?q=${firstWithCoords.lat},${firstWithCoords.lng}&z=10&output=embed`;
   } else {
-    src = `https://www.google.com/maps?q=${encodeURIComponent(fallbackQuery)}&output=embed`;
+    const q = encodeURIComponent(fallbackQuery || "United States");
+    src = `https://www.google.com/maps?q=${q}&z=4&output=embed`;
   }
 
   return (
     <div className="map-embed">
       <iframe
-        title="map"
         className="map-frame"
+        src={src}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
-        src={src}
+        title="stable map"
       />
     </div>
   );
