@@ -1,6 +1,6 @@
 // src/pages/CreateHorse.jsx
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getCurrentUser } from "../lib/auth";
 import { api } from "../lib/api";
 import "../styles/createHorse.css";
@@ -9,6 +9,7 @@ const API_PREFIX = "/api";
 
 export default function CreateHorse() {
   const navigate = useNavigate();
+  const { stableId } = useParams();
 
   const user = useMemo(() => {
     try {
@@ -104,20 +105,36 @@ export default function CreateHorse() {
       return;
     }
 
+    const ownerId = user?.UserID;
+    if (!ownerId || ownerId <= 0) {
+      setError("Missing owner. Please sign in again.");
+      return;
+    }
+
     const payload = {
       Name: trimmedName,
       DOB: form.birthday,
       Temperament: form.temperament.trim() || null,
       Sex: form.sex ? form.sex.toLowerCase() : null,
+      OwnerID: ownerId,
     };
 
     setSubmitting(true);
     try {
-      await api(`${API_PREFIX}/users/${user.UserID}/horses`, {
+      const path = stableId
+        ? `${API_PREFIX}/stables/${stableId}/horses`
+        : `${API_PREFIX}/users/${user.UserID}/horses`;
+
+      await api(path, {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      navigate("/profile");
+
+      if (stableId) {
+        navigate(`/stables/${stableId}/horses`);
+      } else {
+        navigate("/profile");
+      }
     } catch (err) {
       setError(err?.message || "Unable to create horse.");
     } finally {
@@ -130,6 +147,7 @@ export default function CreateHorse() {
     <main className="add-horse-container">
       <div className="add-horse-inner">
         <h1>Add a Horse</h1>
+        {stableId && <p className="form-subtitle">Adding to stable #{stableId}</p>}
 
         {error && <div className="form-error">{error}</div>}
 

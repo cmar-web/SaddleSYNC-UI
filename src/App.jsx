@@ -42,6 +42,7 @@ export default function App() {
               <Route path="/lessons" element={<Lessons />} />
               <Route path="/boarding" element={<Boarding />} />
               <Route path="/stables/:id" element={<StableProfile />} />
+              <Route path="/stables/:stableId/horses/new" element={<CreateHorse />} />
               <Route path="/stables/:id/horses" element={<StableHorses />} />
               <Route path="/stables/:stableId/horses/:horseId" element={<HorseDetail />} />
               <Route path="/users/:userId/horses/:horseId" element={<HorseDetail />} />

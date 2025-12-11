@@ -49,7 +49,7 @@ export default function Profile() {
           LastName: me.LastName || "",
           Email: me.Email || "",
           Level: me.Level || "",
-          StableOwner: toBool(me.StableOwner),
+          StableOwner: toBool(me.StableOwner ?? me.stableOwner),
         }));
 
         let stbs = [];
@@ -90,6 +90,7 @@ export default function Profile() {
         email: form.Email?.trim() || null,
         level: form.Level || null,
         StableOwner: toBool(form.StableOwner) ? 1 : 0,
+        stableOwner: toBool(form.StableOwner) ? 1 : 0, // keep lowercase for backends that expect it
         Role: role,
       };
       const endpoint = `/api/users/${form.UserID}`;
@@ -97,7 +98,7 @@ export default function Profile() {
       setForm((prev) => ({
         ...prev,
         ...updated,
-        StableOwner: toBool(updated?.StableOwner),
+        StableOwner: toBool(updated?.StableOwner ?? updated?.stableOwner),
       }));
     } catch (e) {
       setErr(e.message || "Save failed");

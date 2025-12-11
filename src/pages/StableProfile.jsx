@@ -254,14 +254,21 @@ export default function StableProfile() {
       setError("Start and end time required");
       return;
     }
+    const startISO = new Date(form.StartTime);
+    const endISO = new Date(form.EndTime);
+    if (isNaN(+startISO) || isNaN(+endISO)) {
+      setError("Invalid date/time values");
+      return;
+    }
     try {
+      const payload = {
+        StartTime: startISO.toISOString(),
+        EndTime: endISO.toISOString(),
+        Status: form.Status || "available",
+      };
       const created = await api(`${API_PREFIX}/stables/${id}/services/${svcId}/slots`, {
         method: "POST",
-        body: JSON.stringify({
-          StartTime: form.StartTime,
-          EndTime: form.EndTime,
-          Status: form.Status || "available",
-        }),
+        body: JSON.stringify(payload),
       });
       setSlotsByService(prev => ({
         ...prev,

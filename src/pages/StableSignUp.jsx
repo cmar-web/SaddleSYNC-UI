@@ -46,6 +46,9 @@ export default function StableSignUp() {
   const [submitting, setSubmitting] = useState(false);
   const [phase, setPhase] = useState("");
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
+
+  const zip5 = zip.trim().slice(0, 5);
 
   const formatZip = (zip5, zip4) => zip4 ? `${zip5}-${zip4}` : zip5;
 
@@ -60,6 +63,7 @@ export default function StableSignUp() {
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
+    setWarning("");
 
     if (!stableName.trim()) return setError("Stable name is required.");
     if (!address.trim())    return setError("Address is required.");
@@ -69,6 +73,15 @@ export default function StableSignUp() {
     if (!isEmail(email))    return setError("Valid email is required.");
 
     setSubmitting(true);
+
+    let std = {
+      street1: address.trim(),
+      city: city.trim(),
+      state: stateVal.trim(),
+      zip5: zip.trim(),
+    };
+    let coords = null;
+    let validated = false;
 
     try {
       setPhase("validating");
@@ -82,8 +95,13 @@ export default function StableSignUp() {
         }),
       });
 
-      const std = validateData.address;
-      const coords = validateData.coords;
+      if (validateData?.address) {
+        std = validateData.address;
+        validated = true;
+      }
+      if (validateData?.coords) {
+        coords = validateData.coords;
+      }
 
       setPhase("creating");
       const createPayload = {
@@ -92,7 +110,7 @@ export default function StableSignUp() {
         Address: `${std.street1}${std.street2 ? " " + std.street2 : ""}`,
         City: std.city,
         State: std.state,
-        Zipcode: formatZip(std.zip5, std.zip4),
+        Zipcode: formatZip(std.zip5 || zip5, std.zip4),
         Email: email.trim(),
         Offers: offers.join(","),
       };
@@ -102,16 +120,49 @@ export default function StableSignUp() {
         body: JSON.stringify(createPayload),
       });
 
-      setPhase("saving");
-      await api(`${API}/${created.StableID}/address`, {
-        method: "PUT",
-        body: JSON.stringify({ address: std, coords }),
-      });
+      if (validated || coords) {
+        setPhase("saving");
+        try {
+          await api(`${API}/${created.StableID}/address`, {
+            method: "PUT",
+            body: JSON.stringify({ address: std, coords }),
+          });
+        } catch {
+          // non-blocking: stable already created
+          setWarning("Stable created, but address confirmation could not be saved.");
+        }
+      }
 
       navigate(`/stables/${created.StableID}`, { replace: true });
 
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      if (!validated) {
+        // If validation fails (e.g., 422), try creating without confirmed address
+        try {
+          setWarning(err.message || "Address validation failed; using provided address.");
+          setPhase("creating");
+          const createPayload = {
+            StableName: stableName.trim(),
+            PhoneNumber: phone || null,
+            Address: address.trim(),
+            City: city.trim(),
+            State: stateVal.trim(),
+            Zipcode: zip5,
+            Email: email.trim(),
+            Offers: offers.join(","),
+          };
+          const created = await api(API, {
+            method: "POST",
+            body: JSON.stringify(createPayload),
+          });
+          navigate(`/stables/${created.StableID}`, { replace: true });
+          return;
+        } catch (createErr) {
+          setError(createErr.message || err.message || "Something went wrong");
+        }
+      } else {
+        setError(err.message || "Something went wrong");
+      }
     } finally {
       setPhase("");
       setSubmitting(false);
@@ -131,6 +182,11 @@ export default function StableSignUp() {
           {error && (
             <div className="rounded-xl border border-[hsl(var(--destructive))] bg-[hsl(var(--destructive)/0.08)] text-[hsl(var(--destructive))] px-4 py-3 text-sm" role="alert">
               {error}
+            </div>
+          )}
+          {warning && !error && (
+            <div className="rounded-xl border border-[hsl(var(--accent))] bg-[hsl(var(--accent)/0.08)] text-[hsl(var(--accent))] px-4 py-3 text-sm" role="alert">
+              {warning}
             </div>
           )}
 
