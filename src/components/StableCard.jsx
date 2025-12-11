@@ -22,6 +22,10 @@ export default function StableCard({ stable }) {
     : (stable?.Offers || "").toString().split(",");
   const offers = normalizeOffers(offersRaw);
 
+  const offerLabels = offers
+    .map(o => o.charAt(0).toUpperCase() + o.slice(1))
+    .filter(Boolean);
+
   const hasLatLng =
     typeof stable?.lat === "number" && typeof stable?.lng === "number";
 
@@ -41,18 +45,25 @@ export default function StableCard({ stable }) {
             {offers.includes("lessons") && <TagPill>Lessons</TagPill>}
             {offers.includes("boarding") && <TagPill>Boarding</TagPill>}
           </div>
+          {offerLabels.length > 0 && (
+            <div className="ss-stable-services text-sm text-[hsl(var(--muted-foreground))] mt-1">
+              Offers: {offerLabels.join(" • ")}
+            </div>
+          )}
           {directionsHref && (
             <div className="ss-directions">
-              <a
+              <button
+                type="button"
                 className="ss-btn ss-btn-ghost"
-                href={directionsHref}
-                target="_blank"
-                rel="noreferrer"
-                onClick={e => e.stopPropagation()}
-                title="open directions in google maps"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.open(directionsHref, "_blank", "noopener");
+                }}
+                title="Open directions in Google Maps"
               >
                 Directions
-              </a>
+              </button>
             </div>
           )}
         </div>

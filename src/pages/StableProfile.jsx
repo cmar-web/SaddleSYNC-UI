@@ -856,12 +856,12 @@ export default function StableProfile() {
                   <div className="text-sm text-[hsl(var(--muted-foreground))]">Book directly with this stable</div>
                 </div>
 
-                {(services.filter(s => isOwner || s.IsPublic).length === 0) ? (
+                {(services.filter(s => isOwner || s.IsPublic !== false).length === 0) ? (
                   <div className="text-[hsl(var(--muted-foreground))]">No services listed yet.</div>
                 ) : (
                   <div className="space-y-4">
                     {services
-                      .filter(s => isOwner || s.IsPublic)
+                      .filter(s => isOwner || s.IsPublic !== false)
                       .map((svc) => {
                         const availableSlots = (slotsByService[svc.ServiceID] || []).filter(sl => sl.Status === "available");
                         const form = bookingForm[svc.ServiceID] || {};
