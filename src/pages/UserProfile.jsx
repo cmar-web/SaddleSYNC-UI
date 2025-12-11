@@ -83,12 +83,14 @@ export default function Profile() {
     setSaving(true);
     try {
       if (!form.UserID) throw new Error("Missing user id");
+      const role = toBool(form.StableOwner) ? "StableOwner" : "User";
       const payload = {
         firstName: form.FirstName?.trim() || null,
         lastName: form.LastName?.trim() || null,
         email: form.Email?.trim() || null,
         level: form.Level || null,
         StableOwner: toBool(form.StableOwner) ? 1 : 0,
+        Role: role,
       };
       const endpoint = `/api/users/${form.UserID}`;
       const updated = await api(endpoint, { method: "PUT", body: JSON.stringify(payload) });

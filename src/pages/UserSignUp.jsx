@@ -27,14 +27,17 @@ export default function UserSignUp() {
     if (!password.trim()) return setError("Password is required.");
     if (email && !isEmail(email)) return setError("Please enter a valid email.");
 
+    const role = stableOwner ? "StableOwner" : "User";
     const payload = {
       username: username.trim(),
       password,
+      Role: role,
+      StableOwner: stableOwner ? 1 : 0,
       ...(firstName.trim() ? { firstName: firstName.trim() } : {}),
       ...(lastName.trim()  ? { lastName: lastName.trim() }   : {}),
       ...(email.trim()     ? { email: email.trim() }         : {}),
       ...(level.trim()     ? { level: level.trim() }         : {}),
-      stableOwner: stableOwner ? 1 : 0,
+      stableOwner: stableOwner ? 1 : 0, // keep legacy lower-case for backward compatibility
     };
 
     setSubmitting(true);

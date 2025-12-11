@@ -11,13 +11,16 @@ export default function StableCard({ stable }) {
   const locationLine =
     city && state ? `${city}, ${state}` : city || state || "";
 
-  const offers = Array.isArray(stable?.offers)
+  const normalizeOffers = (arr) =>
+    (arr || [])
+      .map(t => t.trim())
+      .filter(Boolean)
+      .map(t => t.toLowerCase());
+
+  const offersRaw = Array.isArray(stable?.offers)
     ? stable.offers
-    : (stable?.Offers || "")
-        .toString()
-        .split(",")
-        .map(t => t.trim())
-        .filter(Boolean);
+    : (stable?.Offers || "").toString().split(",");
+  const offers = normalizeOffers(offersRaw);
 
   const hasLatLng =
     typeof stable?.lat === "number" && typeof stable?.lng === "number";
@@ -35,8 +38,8 @@ export default function StableCard({ stable }) {
             <div className="ss-stable-location">{locationLine}</div>
           )}
           <div className="ss-stable-tags">
-            {offers.includes("Lessons") && <TagPill>Lessons</TagPill>}
-            {offers.includes("Boarding") && <TagPill>Boarding</TagPill>}
+            {offers.includes("lessons") && <TagPill>Lessons</TagPill>}
+            {offers.includes("boarding") && <TagPill>Boarding</TagPill>}
           </div>
           {directionsHref && (
             <div className="ss-directions">

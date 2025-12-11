@@ -10,6 +10,12 @@ const SERVICE_TAGS = [
   { label: "Boarding", value: "Boarding" },
 ];
 
+const normalizeOffers = (arr) =>
+  (arr || [])
+    .map(t => t.trim())
+    .filter(Boolean)
+    .map(t => t.toLowerCase());
+
 export default function Search() {
   const [params, setParams] = useSearchParams();
   const [stables, setStables] = useState([]);
@@ -46,9 +52,8 @@ export default function Search() {
             ? json.data.map(s => {
                 const parsedOffers = (s.Offers || s.offers || "")
                   .toString()
-                  .split(",")
-                  .map(t => t.trim())
-                  .filter(Boolean);
+                  .split(",");
+                const normalizedOffers = normalizeOffers(parsedOffers);
 
                 return {
                   ...s,
@@ -56,7 +61,7 @@ export default function Search() {
                   name: s.StableName ?? s.Name ?? s.name ?? "Stable",
                   city: s.City ?? s.city ?? "",
                   state: s.State ?? s.state ?? "",
-                  offers: parsedOffers,
+                  offers: normalizedOffers,
                   lat:
                     typeof s.lat === "number"
                       ? s.lat
@@ -104,11 +109,14 @@ export default function Search() {
 
   const filtered = useMemo(() => {
     if (!offers.length) return stables;
-    return stables.filter(s =>
-      Array.isArray(s.offers) && s.offers.length
-        ? offers.some(o => s.offers.includes(o))
-        : true
-    );
+    const selected = normalizeOffers(offers);
+    return stables.filter(s => {
+      if (Array.isArray(s.offers) && s.offers.length) {
+        const normalizedStableOffers = normalizeOffers(s.offers);
+        return selected.some(o => normalizedStableOffers.includes(o));
+      }
+      return true;
+    });
   }, [stables, offers]);
 
   function onSubmitSearch({ near: newNear, offers: nextOffers }) {
