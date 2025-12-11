@@ -53,7 +53,21 @@ export default function StableProfile() {
   const [bookingsByService, setBookingsByService] = useState({});
   const [bookingForm, setBookingForm] = useState({});
   const [bookingLoading, setBookingLoading] = useState({});
-  const [userHorses, setUserHorses] = useState([]);
+  const [stableHorses, setStableHorses] = useState([]);
+  const horseId = (h) => h?.HorseID ?? h?.Id ?? h?.id;
+  const publicStableHorses = useMemo(
+    () =>
+      (stableHorses || []).filter((h) => {
+        if (!h) return false;
+        const flag = h.isPublic ?? h.IsPublic ?? h.is_public ?? h.is_visible ?? h.isVisible;
+        if (typeof flag === "string") {
+          const norm = flag.trim().toLowerCase();
+          return norm === "true" || norm === "1" || norm === "yes";
+        }
+        return flag === true || flag === 1;
+      }),
+    [stableHorses]
+  );
 
   const [bannerBlobID, setBannerBlobID] = useState(null);
   const [avatarBlobID, setAvatarBlobID] = useState(null);
@@ -93,14 +107,11 @@ export default function StableProfile() {
           const list = await api(`${API_PREFIX}/stables/${id}/services`);
           setServices(Array.isArray(list) ? list : []);
         } catch {}
-
-        if (userId) {
-          try {
-            const horses = await api(`${API_PREFIX}/users/${userId}/horses`);
-            setUserHorses(Array.isArray(horses) ? horses : []);
-          } catch {
-            setUserHorses([]);
-          }
+        try {
+          const horses = await api(`${API_PREFIX}/stables/${id}/horses`);
+          setStableHorses(Array.isArray(horses) ? horses : []);
+        } catch {
+          setStableHorses([]);
         }
       } catch (e) {
         setError(e.message || "Failed to load stable");
@@ -110,6 +121,33 @@ export default function StableProfile() {
     })();
     return () => { cancel = true; };
   }, [id]);
+
+  useEffect(() => {
+    if (isOwner) return;
+    services.forEach(svc => {
+      if (svc?.ServiceID) {
+        loadSlots(svc.ServiceID);
+      }
+    });
+  }, [isOwner, services]);
+
+  useEffect(() => {
+    if (!publicStableHorses.length || !services.length) return;
+    setBookingForm((prev) => {
+      const next = { ...prev };
+      services.forEach((svc) => {
+        if (!svc?.ServiceID) return;
+        const current = prev[svc.ServiceID] || {};
+        if (!current.HorseID) {
+          const defaultHorse = horseId(publicStableHorses[0]);
+          if (defaultHorse) {
+            next[svc.ServiceID] = { ...current, HorseID: defaultHorse };
+          }
+        }
+      });
+      return next;
+    });
+  }, [publicStableHorses, services]);
 
   function toggleOffer(value) {
     if (!isOwner) return;
@@ -330,24 +368,33 @@ export default function StableProfile() {
       navigate("/login");
       return;
     }
+    if (!publicStableHorses.length) {
+      setError("This stable has no publicly bookable horses right now.");
+      return;
+    }
     const form = bookingForm[svc.ServiceID] || {};
     setError("");
+    if (!form.SlotID) {
+      setError("Please select an available time slot.");
+      return;
+    }
+    if (!form.HorseID) {
+      setError("Please select one of the stable's horses.");
+      return;
+    }
+    const selectedSlot = (slotsByService[svc.ServiceID] || []).find(sl => sl.SlotID === Number(form.SlotID));
     const payload = {
-      UserID: userId,
-      HorseID: form.HorseID || null,
-      SlotID: form.SlotID || null,
+      UserID: Number(userId),
+      HorseID: form.HorseID ? Number(form.HorseID) : null,
+      SlotID: form.SlotID ? Number(form.SlotID) : null,
       Status: "pending",
       TotalPrice: svc.Price != null ? Number(svc.Price) : undefined,
       Notes: form.Notes?.trim() || undefined,
+      ScheduledFor: selectedSlot?.StartTime ? new Date(selectedSlot.StartTime).toISOString() : undefined,
     };
-    const sched = form.ScheduledFor ? new Date(form.ScheduledFor) : null;
-    if (sched && !isNaN(+sched)) {
-      payload.ScheduledFor = sched.toISOString();
-    }
-    if (!payload.SlotID && !payload.ScheduledFor) {
-      setError("Select an available slot or choose a custom time.");
-      return;
-    }
+    Object.keys(payload).forEach((k) => {
+      if (payload[k] === undefined) delete payload[k];
+    });
     try {
       const created = await api(`${API_PREFIX}/stables/${id}/services/${svc.ServiceID}/bookings`, {
         method: "POST",
@@ -359,8 +406,9 @@ export default function StableProfile() {
       }));
       setBookingForm(prev => ({
         ...prev,
-        [svc.ServiceID]: { SlotID: "", ScheduledFor: "", Notes: "", HorseID: form.HorseID || "" },
+        [svc.ServiceID]: { SlotID: "", Notes: "", HorseID: form.HorseID || "" },
       }));
+      navigate(`/payment?bookingId=${created.BookingID}&amount=${svc.Price || 0}&service=${encodeURIComponent(svc.Name || "Service")}&stableId=${id}&serviceId=${svc.ServiceID}`);
     } catch (e) {
       setError(e.message || "Failed to create booking");
     }
@@ -902,7 +950,7 @@ export default function StableProfile() {
                                           ? "border-[hsl(var(--primary))] text-[hsl(var(--primary))] bg-white"
                                           : "border-[hsl(var(--border))] text-[hsl(var(--rich-brown))]"
                                       }`}
-                                      onClick={() => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), SlotID: slot.SlotID, ScheduledFor: "" } }))}
+                                      onClick={() => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), SlotID: slot.SlotID } }))}
                                     >
                                       {formatDate(slot.StartTime)}
                                     </button>
@@ -916,26 +964,41 @@ export default function StableProfile() {
 
                             <div className="grid md:grid-cols-2 gap-3">
                               <div className="space-y-1">
-                                <label className="text-sm text-[hsl(var(--muted-foreground))]">Or choose a date/time</label>
-                                <input
-                                  type="datetime-local"
-                                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
-                                  value={form.ScheduledFor || ""}
-                                  onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), ScheduledFor: e.target.value, SlotID: "" } }))}
-                                />
+                                <label className="text-sm text-[hsl(var(--muted-foreground))]">Select a stable horse</label>
+                                {publicStableHorses.length === 0 ? (
+                                  <div className="text-sm text-[hsl(var(--muted-foreground))]">No public horses available.</div>
+                                ) : (
+                                  <select
+                                    className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                                    value={form.HorseID || ""}
+                                    onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), HorseID: e.target.value } }))}
+                                  >
+                                    {publicStableHorses.map(h => {
+                                      const idVal = horseId(h);
+                                      return (
+                                        <option key={idVal} value={idVal}>
+                                          {h.Name || `Horse #${idVal}`}
+                                        </option>
+                                      );
+                                    })}
+                                  </select>
+                                )}
                               </div>
                               <div className="space-y-1">
-                                <label className="text-sm text-[hsl(var(--muted-foreground))]">Horse (optional)</label>
-                                <select
+                                <label className="text-sm text-[hsl(var(--muted-foreground))]">Your contact</label>
+                                <input
                                   className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
-                                  value={form.HorseID || ""}
-                                  onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), HorseID: e.target.value } }))}
-                                >
-                                  <option value="">No horse selected</option>
-                                  {userHorses.map(h => (
-                                    <option key={h.HorseID} value={h.HorseID}>{h.Name || `Horse #${h.HorseID}`}</option>
-                                  ))}
-                                </select>
+                                  placeholder="Your name"
+                                  value={form.RiderName || user?.Username || ""}
+                                  onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), RiderName: e.target.value } }))}
+                                />
+                                <input
+                                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 mt-2"
+                                  placeholder="Your email"
+                                  type="email"
+                                  value={form.RiderEmail || user?.Email || ""}
+                                  onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), RiderEmail: e.target.value } }))}
+                                />
                               </div>
                             </div>
 
@@ -952,10 +1015,11 @@ export default function StableProfile() {
 
                             <button
                               type="button"
-                              className="px-4 py-2 rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold"
+                              className="px-4 py-2 rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold shadow-soft"
                               onClick={() => createBooking(svc)}
+                              disabled={!publicStableHorses.length}
                             >
-                              Request booking
+                              Book now
                             </button>
                           </div>
                         );
