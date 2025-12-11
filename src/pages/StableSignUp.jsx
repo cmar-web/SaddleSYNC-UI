@@ -1,8 +1,7 @@
-// src/pages/StableSignUp.jsx
 import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { getCurrentUser } from "../lib/auth";
-import "../styles/stableSignUp.css";
+import { api } from "../lib/api";
 
 const STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA",
@@ -13,7 +12,7 @@ const isEmail = (s) => /\S+@\S+\.\S+/.test(s || "");
 const OFFER_OPTIONS = ["Lessons", "Boarding"];
 
 export default function StableSignUp() {
-  const API = (import.meta.env.VITE_API_URL || "") + "/api/stables";
+  const API = "/api/stables";
   const navigate = useNavigate();
 
   const user = useMemo(() => getCurrentUser(), []);
@@ -21,32 +20,15 @@ export default function StableSignUp() {
 
   if (!userId) {
     return (
-      <section className="unauth-container">
-        <div className="unauth-inner">
-          <h1 className="unauth-header">Put your stable on the SaddleSync map</h1>
-          <p className="unauth-subtitle">
-            Create a free stable profile so riders can discover your lessons and boarding
-            options when they move to a new area or look for somewhere new to ride.
-          </p>
-
-          <ul className="unauth-list">
-            <li>Show up when riders search for lessons or boarding near your city.</li>
-            <li>Highlight disciplines, lesson levels, and boarding options you offer.</li>
-            <li>Keep your contact details and offerings in one easy-to-update place.</li>
-          </ul>
-
-          <div className="unauth-actions">
-            <Link className="btn btn-light" to="/userSignUp">
-              Create stable owner account
-            </Link>
-            <Link className="btn btn-light" to="/login">
-              I already have an account
-            </Link>
+      <section className="min-h-screen bg-[hsl(var(--background))] flex items-center justify-center px-4 py-12">
+        <div className="bg-white rounded-3xl shadow-elevated border border-[hsl(var(--border))] p-8 space-y-4 max-w-xl w-full text-center">
+          <h1 className="text-3xl font-serif text-[hsl(var(--rich-brown))]">Put your stable on SaddleSync</h1>
+          <p className="text-[hsl(var(--muted-foreground))]">Create a stable owner account to list your barn.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link className="px-4 py-2 rounded-xl border border-[hsl(var(--border))] text-[hsl(var(--rich-brown))]" to="/userSignUp">Create owner account</Link>
+            <Link className="px-4 py-2 rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]" to="/login">I already have an account</Link>
           </div>
-
-          <p className="unauth-footnote">
-            Just here to browse? <Link to="/search">Explore stables near you</Link>.
-          </p>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">Just browsing? <Link to="/search" className="text-[hsl(var(--primary))] font-semibold">Explore stables</Link>.</p>
         </div>
       </section>
     );
@@ -59,7 +41,7 @@ export default function StableSignUp() {
   const [stateVal, setStateVal]     = useState("");
   const [zip, setZip]               = useState("");
   const [email, setEmail]           = useState(user?.Email || "");
-  const [offers, setOffers]         = useState([]); 
+  const [offers, setOffers]         = useState([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [phase, setPhase] = useState("");
@@ -90,9 +72,8 @@ export default function StableSignUp() {
 
     try {
       setPhase("validating");
-      const validateRes = await fetch(`${API}/validate-address`, {
+      const validateData = await api(`${API}/validate-address`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           street1: address.trim(),
           city: city.trim(),
@@ -101,21 +82,12 @@ export default function StableSignUp() {
         }),
       });
 
-      const validateData = await validateRes.json().catch(() => ({}));
-      if (!validateRes.ok) {
-        if (validateRes.status === 422) {
-          throw new Error(validateData.error || "That address is invalid. Please check it.");
-        }
-        throw new Error(validateData.error || "Address validation failed.");
-      }
-
       const std = validateData.address;
       const coords = validateData.coords;
 
       setPhase("creating");
       const createPayload = {
         StableName: stableName.trim(),
-        OwnerID: userId,
         PhoneNumber: phone || null,
         Address: `${std.street1}${std.street2 ? " " + std.street2 : ""}`,
         City: std.city,
@@ -125,46 +97,16 @@ export default function StableSignUp() {
         Offers: offers.join(","),
       };
 
-      const r = await fetch(API, {
+      const created = await api(API, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,
-        },
         body: JSON.stringify(createPayload),
       });
 
-      let created;
-      if (!r.ok) {
-        let msg = "Create failed";
-        try {
-          const t = await r.text();
-          msg = t || msg;
-          try { msg = JSON.parse(t).error || msg; } catch {}
-        } catch {}
-        throw new Error(msg);
-      } else {
-        created = await r.json();
-      }
-
       setPhase("saving");
-      const saveRes = await fetch(`${API}/${created.StableID}/address`, {
+      await api(`${API}/${created.StableID}/address`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,
-        },
         body: JSON.stringify({ address: std, coords }),
       });
-
-      if (!saveRes.ok) {
-        let msg = "Saving address failed";
-        try {
-          const t = await saveRes.text();
-          msg = (JSON.parse(t).error) || t || msg;
-        } catch {}
-        throw new Error(msg);
-      }
 
       navigate(`/stables/${created.StableID}`, { replace: true });
 
@@ -177,51 +119,53 @@ export default function StableSignUp() {
   }
 
   return (
-    <section className="auth-stable-container">
-      <div className="auth-stable-inner">
-        <header className="auth-stable-header">
-          <h1 className="auth-title">Register your stable</h1>
-          <p className="auth-subtitle">Tell riders how to find you</p>
-        </header>
+    <section className="min-h-screen bg-[hsl(var(--background))] px-4 py-10">
+      <div className="container mx-auto max-w-4xl">
+        <div className="bg-white rounded-3xl shadow-elevated border border-[hsl(var(--border))] p-8 md:p-10 space-y-6">
+          <header className="space-y-2 text-center">
+            <p className="text-sm font-semibold text-[hsl(var(--primary))] uppercase tracking-wide">Register your stable</p>
+            <h1 className="text-3xl font-serif text-[hsl(var(--rich-brown))]">Tell riders how to find you</h1>
+            <p className="text-[hsl(var(--muted-foreground))]">Keep your contact details and offerings in one easy-to-update place.</p>
+          </header>
 
-        <form className="card form-card" onSubmit={onSubmit} noValidate>
-          <div className="form-grid">
+          {error && (
+            <div className="rounded-xl border border-[hsl(var(--destructive))] bg-[hsl(var(--destructive)/0.08)] text-[hsl(var(--destructive))] px-4 py-3 text-sm" role="alert">
+              {error}
+            </div>
+          )}
 
-            <div className="form-row">
-              <label htmlFor="stableName" className="label">
-                Stable name <span className="req">*</span>
-              </label>
+          <form className="space-y-4" onSubmit={onSubmit} noValidate>
+            <div className="space-y-2">
+              <label htmlFor="stableName" className="text-sm text-[hsl(var(--muted-foreground))]">Stable name *</label>
               <input
                 id="stableName"
-                className="input"
-                placeholder="Enter stable name..."
+                className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                placeholder="Enter stable name"
                 value={stableName}
                 onChange={(e) => setStableName(e.target.value)}
                 required
               />
             </div>
 
-            <div className="form-row cols-2">
-              <div>
-                <label htmlFor="phone" className="label">Phone</label>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="phone" className="text-sm text-[hsl(var(--muted-foreground))]">Phone</label>
                 <input
                   id="phone"
-                  className="input"
-                  placeholder="Enter stable phone number..."
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                  placeholder="Enter stable phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   inputMode="tel"
                 />
               </div>
-              <div>
-                <label htmlFor="email" className="label">
-                  Email <span className="req">*</span>
-                </label>
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm text-[hsl(var(--muted-foreground))]">Email *</label>
                 <input
                   id="email"
-                  className="input"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
                   type="email"
-                  placeholder="Enter stable email..."
+                  placeholder="Enter stable email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -230,13 +174,18 @@ export default function StableSignUp() {
               </div>
             </div>
 
-            <div className="form-row">
-              <span className="label">Offers</span>
-              <div className="offers-row">
+            <div className="space-y-2">
+              <span className="text-sm text-[hsl(var(--muted-foreground))]">Offers</span>
+              <div className="flex flex-wrap gap-2">
                 {OFFER_OPTIONS.map(opt => (
-                  <label key={opt} className="offers-pill">
+                  <label key={opt} className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${
+                    offers.includes(opt)
+                      ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]"
+                      : "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))]"
+                  }`}>
                     <input
                       type="checkbox"
+                      className="hidden"
                       checked={offers.includes(opt)}
                       onChange={() => toggleOffer(opt)}
                     />
@@ -246,14 +195,12 @@ export default function StableSignUp() {
               </div>
             </div>
 
-            <div className="form-row">
-              <label htmlFor="address" className="label">
-                Address <span className="req">*</span>
-              </label>
+            <div className="space-y-2">
+              <label htmlFor="address" className="text-sm text-[hsl(var(--muted-foreground))]">Address *</label>
               <input
                 id="address"
-                className="input"
-                placeholder="Enter address..."
+                className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                placeholder="Enter address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 required
@@ -261,28 +208,24 @@ export default function StableSignUp() {
               />
             </div>
 
-            <div className="form-row cols-3">
-              <div>
-                <label htmlFor="city" className="label">
-                  City <span className="req">*</span>
-                </label>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="city" className="text-sm text-[hsl(var(--muted-foreground))]">City *</label>
                 <input
                   id="city"
-                  className="input"
-                  placeholder="Enter city..."
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                  placeholder="City"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   required
                   autoComplete="address-level2"
                 />
               </div>
-              <div>
-                <label htmlFor="state" className="label">
-                  State <span className="req">*</span>
-                </label>
+              <div className="space-y-2">
+                <label htmlFor="state" className="text-sm text-[hsl(var(--muted-foreground))]">State *</label>
                 <select
                   id="state"
-                  className="input select"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
                   value={stateVal}
                   onChange={(e) => setStateVal(e.target.value)}
                   required
@@ -292,14 +235,12 @@ export default function StableSignUp() {
                   {STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <div>
-                <label htmlFor="zip" className="label">
-                  Zip <span className="req">*</span>
-                </label>
+              <div className="space-y-2">
+                <label htmlFor="zip" className="text-sm text-[hsl(var(--muted-foreground))]">Zip *</label>
                 <input
                   id="zip"
-                  className="input"
-                  placeholder="Enter zipcode..."
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                  placeholder="Zipcode"
                   value={zip}
                   onChange={(e) => setZip(e.target.value)}
                   required
@@ -309,21 +250,20 @@ export default function StableSignUp() {
               </div>
             </div>
 
-            <div className="form-actions">
-              <button className="btn btn-light" type="submit" disabled={submitting}>
-                {phase === "validating" ? "Validating…" :
-                 phase === "creating"   ? "Creating…"   :
-                 phase === "saving"     ? "Saving address…" :
+            <div className="pt-2">
+              <button className="w-full rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold py-3 shadow-soft" type="submit" disabled={submitting}>
+                {phase === "validating" ? "Validating..." :
+                 phase === "creating"   ? "Creating..."   :
+                 phase === "saving"     ? "Saving address..." :
                  "Create stable"}
               </button>
-              {error && <div className="form-error" role="alert">{error}</div>}
             </div>
-          </div>
-        </form>
+          </form>
 
-        <p className="form-note">
-          Changed your mind? <Link to="/">Go back home</Link>.
-        </p>
+          <p className="text-center text-sm text-[hsl(var(--muted-foreground))]">
+            Changed your mind? <Link to="/" className="text-[hsl(var(--primary))] font-semibold">Go back home</Link>.
+          </p>
+        </div>
       </div>
     </section>
   );

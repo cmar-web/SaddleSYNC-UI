@@ -2,9 +2,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../lib/auth";
+import { api } from "../lib/api";
 import "../styles/createHorse.css";
 
-const API = (import.meta.env.VITE_API_URL || "") + "/api";
+const API_PREFIX = "/api";
 
 export default function CreateHorse() {
   const navigate = useNavigate();
@@ -112,27 +113,14 @@ export default function CreateHorse() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API}/users/${user.UserID}/horses`, {
+      await api(`${API_PREFIX}/users/${user.UserID}/horses`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: user.token ? `Bearer ${user.token}` : "",
-        },
         body: JSON.stringify(payload),
       });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        setError(data?.message || "Unable to create horse.");
-        setSubmitting(false);
-        return;
-      }
-
-
-      navigate(`/users/${user.UserID}`);
-    } catch {
-      setError("Network error while creating horse.");
+      navigate("/profile");
+    } catch (err) {
+      setError(err?.message || "Unable to create horse.");
+    } finally {
       setSubmitting(false);
     }
   }
@@ -303,7 +291,7 @@ export default function CreateHorse() {
                               className="tag-remove"
                               onClick={() => removeLike(item)}
                             >
-                              ×
+                              x
                             </button>
                           </li>
                         ))}
@@ -346,7 +334,7 @@ export default function CreateHorse() {
                               className="tag-remove"
                               onClick={() => removeDislike(item)}
                             >
-                              ×
+                              x
                             </button>
                           </li>
                         ))}
@@ -385,7 +373,7 @@ export default function CreateHorse() {
               className="btn-primary"
               disabled={submitting}
             >
-              {submitting ? "Saving…" : "Save horse"}
+              {submitting ? "Saving..." : "Save horse"}
             </button>
           </div>
         </form>

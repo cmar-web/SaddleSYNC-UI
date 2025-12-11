@@ -39,25 +39,35 @@ export default function SearchSidebar({
   }
 
   return (
-    <form className="search-form" onSubmit={handleSubmit}>
-      <label className="search-label">
-        <span className="search-label-text">location</span>
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <label className="flex flex-col gap-2">
+        <span className="text-sm font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">
+          Location
+        </span>
         <input
-          className="input"
+          className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
           type="text"
-          placeholder="city or zip code"
+          placeholder="City or zip code"
           value={near}
           onChange={e => setNear(e.target.value)}
         />
       </label>
 
-      <div className="mt-3">
-        <div className="search-label-text">offers</div>
-        <div className="offers-row">
+      <div className="space-y-2">
+        <div className="text-sm font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wide">Offers</div>
+        <div className="flex flex-wrap gap-2">
           {OFFER_OPTIONS.map(opt => (
-            <label key={opt} className="offer-chip">
+            <label
+              key={opt}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium cursor-pointer ${
+                selectedOffers.includes(opt)
+                  ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]"
+                  : "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))]"
+              }`}
+            >
               <input
                 type="checkbox"
+                className="hidden"
                 checked={selectedOffers.includes(opt)}
                 onChange={() => toggleOffer(opt)}
               />
@@ -67,8 +77,11 @@ export default function SearchSidebar({
         </div>
       </div>
 
-      <button type="submit" className="btn primary mt-4">
-        search
+      <button
+        type="submit"
+        className="w-full rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold py-3 shadow-soft"
+      >
+        Search
       </button>
     </form>
   );

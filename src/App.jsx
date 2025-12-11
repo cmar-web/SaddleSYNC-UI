@@ -11,6 +11,8 @@ const Lessons       = lazy(() => import("./pages/Lessons.jsx"));
 const Boarding      = lazy(() => import("./pages/Boarding.jsx"));
 const BoardingInfo  = lazy(() => import("./pages/BoardingInfo.jsx"));
 const StableProfile = lazy(() => import("./pages/StableProfile.jsx"));
+const StableHorses  = lazy(() => import("./pages/StableHorses.jsx"));
+const HorseDetail   = lazy(() => import("./pages/HorseDetail.jsx"));
 const UserProfile   = lazy(() => import("./pages/UserProfile.jsx"));
 const UserSignUp    = lazy(() => import("./pages/UserSignUp.jsx"));
 const StableSignUp  = lazy(() => import("./pages/StableSignUp.jsx"));
@@ -40,6 +42,9 @@ export default function App() {
               <Route path="/lessons" element={<Lessons />} />
               <Route path="/boarding" element={<Boarding />} />
               <Route path="/stables/:id" element={<StableProfile />} />
+              <Route path="/stables/:id/horses" element={<StableHorses />} />
+              <Route path="/stables/:stableId/horses/:horseId" element={<HorseDetail />} />
+              <Route path="/users/:userId/horses/:horseId" element={<HorseDetail />} />
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/userSignUp" element={<UserSignUp/>} />
               <Route path="/stableSignUp" element={<StableSignUp/>} />

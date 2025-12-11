@@ -1,30 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  --bg: #f7f7f8;
-  --text: #1f2937;
-  --muted: #f0f2f5;
-  --ring: #34aa43;
+  /* palette aligned to saddlesync-connect */
+  --background: 40 45% 97%;
+  --foreground: 28 45% 15%;
+  --card: 40 40% 99%;
+  --card-foreground: 28 45% 15%;
+  --popover: 40 40% 99%;
+  --popover-foreground: 28 45% 15%;
+  --primary: 28 70% 45%;
+  --primary-foreground: 40 45% 98%;
+  --secondary: 38 85% 50%;
+  --secondary-foreground: 28 45% 15%;
+  --muted: 38 35% 93%;
+  --muted-foreground: 28 25% 45%;
+  --accent: 32 90% 55%;
+  --accent-foreground: 28 45% 15%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 38 30% 88%;
+  --input: 38 30% 88%;
+  --ring: 28 70% 45%;
+  --radius: 0.75rem;
+  --warm-cream: 40 45% 97%;
+  --rich-brown: 28 70% 45%;
+  --sage-green: 38 85% 50%;
+  --golden-accent: 32 90% 55%;
+  --deep-earth: 28 45% 15%;
+  --gradient-hero: linear-gradient(135deg, hsl(28 70% 45% / 0.9), hsl(38 85% 50% / 0.85));
+  --gradient-card: linear-gradient(180deg, hsl(40 40% 99%), hsl(40 45% 97%));
+  --gradient-accent: linear-gradient(135deg, hsl(32 90% 55%), hsl(28 70% 45%));
+  --shadow-soft: 0 4px 20px -4px hsl(28 70% 45% / 0.12);
+  --shadow-card: 0 8px 30px -8px hsl(28 45% 15% / 0.08);
+  --shadow-elevated: 0 20px 50px -15px hsl(28 45% 15% / 0.15);
 
-
-
-  /* landing */
-  --title-brown: #5b3b2d;
-  --bar-olive:  #6b7b59; 
-  --bar-sage:   #93b37a;
-  --bar-tan:    #8a6a4f;
-  --bar-brown:  #4a2d21;
-
-  --cta-gold:   #fac96d;
-  --cta-stroke: #111111;
+  /* legacy tokens mapped to new palette for existing classes */
+  --bg: hsl(var(--background));
+  --text: hsl(var(--foreground));
+  --muted-bg: hsl(var(--muted));
+  --title-brown: hsl(var(--rich-brown));
+  --bar-olive: hsl(var(--sage-green));
+  --bar-sage: hsl(var(--sage-green));
+  --bar-tan: hsl(var(--golden-accent));
+  --bar-brown: hsl(var(--rich-brown));
+  --cta-gold: hsl(var(--golden-accent));
+  --cta-stroke: hsl(var(--deep-earth));
 }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
 }
+ h1, h2, h3, h4, h5, h6 { font-family: "Playfair Display", Georgia, serif; }
 .container { max-width: 100%; margin: 0 auto; }
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 .main { flex: 1; }
@@ -389,4 +424,3 @@ body {
   border-radius: 10px;
   padding: 6px 10px;
 }
-
