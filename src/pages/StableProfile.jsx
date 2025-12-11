@@ -163,34 +163,26 @@ export default function StableProfile() {
     if (!isOwner) return;
     setError("");
     try {
-      const diff = {};
-      if (name     !== (stable?.StableName  || "")) diff.StableName  = name.trim();
-      if (phone    !== (stable?.PhoneNumber || "")) diff.PhoneNumber = phone.trim() || null;
-      if (address  !== (stable?.Address     || "")) diff.Address     = address.trim();
-      if (city     !== (stable?.City        || "")) diff.City        = city.trim();
-      if (stateVal !== (stable?.State       || "")) diff.State       = stateVal.trim();
-      if (zip      !== (stable?.Zipcode     || "")) diff.Zipcode     = zip.trim();
-      if (email    !== (stable?.Email       || "")) diff.Email       = email.trim();
-
-      const stableOffersCsv = (stable?.Offers || "")
-        .split(",")
-        .map(t => t.trim())
-        .filter(Boolean)
-        .join(",");
-      const newOffersCsv = offers.join(",");
-      if (newOffersCsv !== stableOffersCsv) {
-        diff.Offers = newOffersCsv;
-      }
-
-      if (!Object.keys(diff).length) return;
+      const payload = {
+        StableName: name.trim() || stable?.StableName || "",
+        PhoneNumber: phone.trim() || null,
+        Address: address.trim() || null,
+        City: city.trim() || null,
+        State: stateVal.trim() || null,
+        Zipcode: zip.trim() || null,
+        Email: email.trim() || null,
+        Offers: offers.join(","),
+        OwnerID: stable?.OwnerID,
+      };
 
       const updated = await api(`${API_PREFIX}/stables/${id}`, {
         method: "PUT",
-        body: JSON.stringify(diff),
+        body: JSON.stringify(payload),
       });
       setStable(updated);
 
-      const updatedOffers = (updated.Offers || "")
+      const updatedOffersStr = updated.Offers || payload.Offers || "";
+      const updatedOffers = updatedOffersStr
         .split(",")
         .map(t => t.trim())
         .filter(Boolean);
@@ -905,128 +897,130 @@ export default function StableProfile() {
               </div>
             )}
 
-              <div className="rounded-3xl bg-white shadow-card border border-[hsl(var(--border))] p-6 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-[hsl(var(--rich-brown))]">Services</h3>
-                  <div className="text-sm text-[hsl(var(--muted-foreground))]">Book directly with this stable</div>
-                </div>
+              {!isOwner && (
+                <div className="rounded-3xl bg-white shadow-card border border-[hsl(var(--border))] p-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-[hsl(var(--rich-brown))]">Services</h3>
+                    <div className="text-sm text-[hsl(var(--muted-foreground))]">Book directly with this stable</div>
+                  </div>
 
-                {(services.filter(s => isOwner || s.IsPublic !== false).length === 0) ? (
-                  <div className="text-[hsl(var(--muted-foreground))]">No services listed yet.</div>
-                ) : (
-                  <div className="space-y-4">
-                    {services
-                      .filter(s => isOwner || s.IsPublic !== false)
-                      .map((svc) => {
-                        const availableSlots = (slotsByService[svc.ServiceID] || []).filter(sl => sl.Status === "available");
-                        const form = bookingForm[svc.ServiceID] || {};
-                        return (
-                          <div key={svc.ServiceID} className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 space-y-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <div className="text-lg font-semibold text-[hsl(var(--rich-brown))]">{svc.Name}</div>
-                                <div className="text-sm text-[hsl(var(--muted-foreground))]">{svc.DurationMinutes} min - ${Number(svc.Price || 0).toFixed(2)}</div>
-                                {svc.Description && <div className="text-sm text-[hsl(var(--muted-foreground))] mt-1">{svc.Description}</div>}
+                  {(services.filter(s => s.IsPublic !== false).length === 0) ? (
+                    <div className="text-[hsl(var(--muted-foreground))]">No services listed yet.</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {services
+                        .filter(s => s.IsPublic !== false)
+                        .map((svc) => {
+                          const availableSlots = (slotsByService[svc.ServiceID] || []).filter(sl => sl.Status === "available");
+                          const form = bookingForm[svc.ServiceID] || {};
+                          return (
+                            <div key={svc.ServiceID} className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 space-y-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <div className="text-lg font-semibold text-[hsl(var(--rich-brown))]">{svc.Name}</div>
+                                  <div className="text-sm text-[hsl(var(--muted-foreground))]">{svc.DurationMinutes} min - ${Number(svc.Price || 0).toFixed(2)}</div>
+                                  {svc.Description && <div className="text-sm text-[hsl(var(--muted-foreground))] mt-1">{svc.Description}</div>}
+                                </div>
+                                <button
+                                  className="text-[hsl(var(--primary))] text-sm font-semibold"
+                                  type="button"
+                                  onClick={() => loadSlots(svc.ServiceID)}
+                                >
+                                  {slotsByService[svc.ServiceID] ? "Refresh slots" : "Load slots"}
+                                </button>
                               </div>
-                              <button
-                                className="text-[hsl(var(--primary))] text-sm font-semibold"
-                                type="button"
-                                onClick={() => loadSlots(svc.ServiceID)}
-                              >
-                                {slotsByService[svc.ServiceID] ? "Refresh slots" : "Load slots"}
-                              </button>
-                            </div>
 
-                            {availableSlots.length > 0 && (
-                              <div className="space-y-2">
-                                <p className="text-sm font-semibold text-[hsl(var(--rich-brown))]">Pick a time</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {availableSlots.map(slot => (
-                                    <button
-                                      key={slot.SlotID}
-                                      type="button"
-                                      className={`px-3 py-2 rounded-lg border text-sm ${
-                                        form.SlotID === slot.SlotID
-                                          ? "border-[hsl(var(--primary))] text-[hsl(var(--primary))] bg-white"
-                                          : "border-[hsl(var(--border))] text-[hsl(var(--rich-brown))]"
-                                      }`}
-                                      onClick={() => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), SlotID: slot.SlotID } }))}
+                              {availableSlots.length > 0 && (
+                                <div className="space-y-2">
+                                  <p className="text-sm font-semibold text-[hsl(var(--rich-brown))]">Pick a time</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {availableSlots.map(slot => (
+                                      <button
+                                        key={slot.SlotID}
+                                        type="button"
+                                        className={`px-3 py-2 rounded-lg border text-sm ${
+                                          form.SlotID === slot.SlotID
+                                            ? "border-[hsl(var(--primary))] text-[hsl(var(--primary))] bg-white"
+                                            : "border-[hsl(var(--border))] text-[hsl(var(--rich-brown))]"
+                                        }`}
+                                        onClick={() => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), SlotID: slot.SlotID } }))}
+                                      >
+                                        {formatDate(slot.StartTime)}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {slotsByService[svc.ServiceID] && availableSlots.length === 0 && (
+                                <div className="text-sm text-[hsl(var(--muted-foreground))]">No available slots right now.</div>
+                              )}
+
+                              <div className="grid md:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                  <label className="text-sm text-[hsl(var(--muted-foreground))]">Select a stable horse</label>
+                                  {publicStableHorses.length === 0 ? (
+                                    <div className="text-sm text-[hsl(var(--muted-foreground))]">No public horses available.</div>
+                                  ) : (
+                                    <select
+                                      className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                                      value={form.HorseID || ""}
+                                      onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), HorseID: e.target.value } }))}
                                     >
-                                      {formatDate(slot.StartTime)}
-                                    </button>
-                                  ))}
+                                      {publicStableHorses.map(h => {
+                                        const idVal = horseId(h);
+                                        return (
+                                          <option key={idVal} value={idVal}>
+                                            {h.Name || `Horse #${idVal}`}
+                                          </option>
+                                        );
+                                      })}
+                                    </select>
+                                  )}
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-sm text-[hsl(var(--muted-foreground))]">Your contact</label>
+                                  <input
+                                    className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                                    placeholder="Your name"
+                                    value={form.RiderName || user?.Username || ""}
+                                    onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), RiderName: e.target.value } }))}
+                                  />
+                                  <input
+                                    className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 mt-2"
+                                    placeholder="Your email"
+                                    type="email"
+                                    value={form.RiderEmail || user?.Email || ""}
+                                    onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), RiderEmail: e.target.value } }))}
+                                  />
                                 </div>
                               </div>
-                            )}
-                            {slotsByService[svc.ServiceID] && availableSlots.length === 0 && (
-                              <div className="text-sm text-[hsl(var(--muted-foreground))]">No available slots right now.</div>
-                            )}
 
-                            <div className="grid md:grid-cols-2 gap-3">
                               <div className="space-y-1">
-                                <label className="text-sm text-[hsl(var(--muted-foreground))]">Select a stable horse</label>
-                                {publicStableHorses.length === 0 ? (
-                                  <div className="text-sm text-[hsl(var(--muted-foreground))]">No public horses available.</div>
-                                ) : (
-                                  <select
-                                    className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
-                                    value={form.HorseID || ""}
-                                    onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), HorseID: e.target.value } }))}
-                                  >
-                                    {publicStableHorses.map(h => {
-                                      const idVal = horseId(h);
-                                      return (
-                                        <option key={idVal} value={idVal}>
-                                          {h.Name || `Horse #${idVal}`}
-                                        </option>
-                                      );
-                                    })}
-                                  </select>
-                                )}
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-sm text-[hsl(var(--muted-foreground))]">Your contact</label>
-                                <input
+                                <label className="text-sm text-[hsl(var(--muted-foreground))]">Notes</label>
+                                <textarea
                                   className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
-                                  placeholder="Your name"
-                                  value={form.RiderName || user?.Username || ""}
-                                  onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), RiderName: e.target.value } }))}
-                                />
-                                <input
-                                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 mt-2"
-                                  placeholder="Your email"
-                                  type="email"
-                                  value={form.RiderEmail || user?.Email || ""}
-                                  onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), RiderEmail: e.target.value } }))}
+                                  rows={3}
+                                  placeholder="Anything the stable should know"
+                                  value={form.Notes || ""}
+                                  onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), Notes: e.target.value } }))}
                                 />
                               </div>
-                            </div>
 
-                            <div className="space-y-1">
-                              <label className="text-sm text-[hsl(var(--muted-foreground))]">Notes</label>
-                              <textarea
-                                className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
-                                rows={3}
-                                placeholder="Anything the stable should know"
-                                value={form.Notes || ""}
-                                onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), Notes: e.target.value } }))}
-                              />
+                              <button
+                                type="button"
+                                className="px-4 py-2 rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold shadow-soft"
+                                onClick={() => createBooking(svc)}
+                                disabled={!publicStableHorses.length}
+                              >
+                                Book now
+                              </button>
                             </div>
-
-                            <button
-                              type="button"
-                              className="px-4 py-2 rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold shadow-soft"
-                              onClick={() => createBooking(svc)}
-                              disabled={!publicStableHorses.length}
-                            >
-                              Book now
-                            </button>
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
-              </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-wrap gap-3">
                 {hasLessons && (
@@ -1060,7 +1054,7 @@ export default function StableProfile() {
 
               {isOwner && (
                 <div className="flex flex-wrap items-center gap-3">
-                  <button className="px-4 py-2 rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold" onClick={saveCore}>Save core details</button>
+                  <button className="px-4 py-2 rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold" onClick={saveCore}>Save changes</button>
                   <button className="px-4 py-2 rounded-xl border border-[hsl(var(--border))] text-[hsl(var(--rich-brown))] font-semibold" onClick={savePage}>Save page content</button>
                   {error && <span className="text-[hsl(var(--destructive))] text-sm">{error}</span>}
                 </div>

@@ -24,11 +24,35 @@ export default function Profile() {
   });
   const [stables, setStables] = useState([]);
   const [horses, setHorses] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
-  const upcomingBookings = [];
+  const upcomingBookings = useMemo(() => {
+    const now = Date.now();
+    const list = (bookings || [])
+      .filter((b) => {
+        const status = (b.Status || "").toString().toLowerCase();
+        const ts = b.ScheduledFor ? Date.parse(b.ScheduledFor) : null;
+        return (status === "pending" || status === "confirmed") && ts && ts >= now;
+      })
+      .map((b) => ({
+        id: b.BookingID ?? b.id,
+        title: b.ServiceName || b.Name || "Booking",
+        ts: Date.parse(b.ScheduledFor),
+        dateLabel: b.ScheduledFor,
+        location: b.StableName || b.Location || "",
+        type: b.Status,
+      }));
+    return list
+      .sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0))
+      .slice(0, 5)
+      .map((b) => ({
+        ...b,
+        dateLabel: b.ts ? new Date(b.ts).toLocaleString() : "Scheduled",
+      }));
+  }, [bookings]);
 
   const initials = useMemo(() => {
     const a = (form.FirstName || "").trim()[0] || "";
@@ -68,6 +92,12 @@ export default function Profile() {
           setHorses(Array.isArray(hrs) ? hrs : []);
         } catch {
           setHorses([]);
+        }
+        try {
+          const bks = await api(`/api/users/${me.UserID}/bookings`);
+          setBookings(Array.isArray(bks) ? bks : []);
+        } catch {
+          setBookings([]);
         }
       } catch (e) {
         setErr(e.message || "Failed to load profile");

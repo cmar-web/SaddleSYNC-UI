@@ -37,7 +37,8 @@ export default function Payment() {
         });
       }
       setMessage("Payment submitted and lesson confirmed.");
-      setTimeout(() => navigate(`/stables/${stableId || ""}` || "/profile"), 800);
+      const redirect = stableId ? `/stables/${stableId}` : "/profile";
+      setTimeout(() => navigate(redirect), 800);
     } catch (err) {
       setMessage(err?.message || "Unable to confirm booking.");
     } finally {

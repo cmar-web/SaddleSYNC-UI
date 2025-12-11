@@ -19,6 +19,8 @@ const StableSignUp  = lazy(() => import("./pages/StableSignUp.jsx"));
 const Login         = lazy(() => import("./pages/UserLogin.jsx"));
 const CreateHorse   = lazy(() => import("./pages/CreateHorse.jsx"));
 const Payment       = lazy(() => import("./pages/Payment.jsx"));
+const ServicesUpcoming = lazy(() => import("./pages/ServicesUpcoming.jsx"));
+const ServicesHistory  = lazy(() => import("./pages/ServicesHistory.jsx"));
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -89,6 +91,8 @@ export default function App() {
                 <Route path="/login" element={<Login/>}/>
                 <Route path="/createHorse" element={<CreateHorse/>}/>
                 <Route path="/boardingInfo" element={<BoardingInfo/>}/>
+                <Route path="/services/upcoming" element={<ServicesUpcoming/>}/>
+                <Route path="/services/history" element={<ServicesHistory/>}/>
                 <Route path="/payment" element={<Payment/>}/>
                 <Route path="*" element={<div>Not found</div>} />
               </Routes>
