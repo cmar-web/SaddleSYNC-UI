@@ -30,23 +30,27 @@ export default function Profile() {
   const [err, setErr] = useState("");
 
   const upcomingBookings = useMemo(() => {
-    const now = Date.now();
     const list = (bookings || [])
       .filter((b) => {
         const status = (b.Status || "").toString().toLowerCase();
-        return status === "pending" || status === "confirmed";
+        if (status === "cancelled" || status === "canceled") return false;
+        if (status === "completed") return false;
+        return true;
       })
       .map((b) => {
         const tsRaw =
-          b.ScheduledFor ||
           b.StartTime ||
+          b.ScheduledFor ||
           b.SlotStartTime ||
           b.CreatedAt ||
           null;
+        const typeLabel = (b.Type || "").toString().toLowerCase();
+        const prettyType = typeLabel ? typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1) : "Booking";
+        const idLabel = b.ResourceID || b.ServiceID || b.LessonID || b.BoardingID || b.BookingID;
         const title =
           b.ServiceName ||
           b.Name ||
-          (b.Type ? `${(b.Type || "").charAt(0).toUpperCase() + (b.Type || "").slice(1)} booking` : "Booking");
+          (typeLabel === "service" ? `Service #${idLabel || ""}`.trim() : `${prettyType} ${idLabel ? `#${idLabel}` : ""}`.trim());
         const stableLabel = b.StableName || b.Location || "";
         const ts = tsRaw ? Date.parse(tsRaw) : null;
         return {
@@ -55,10 +59,9 @@ export default function Profile() {
           ts,
           dateLabel: ts ? new Date(ts).toLocaleString() : "Scheduled",
           location: stableLabel || "Stable",
-          type: b.Status,
+          type: b.Status || prettyType,
         };
       })
-      .filter((b) => !b.ts || b.ts >= now) // keep future or undated
       .sort((a, b) => (a.ts ?? Infinity) - (b.ts ?? Infinity))
       .slice(0, 5);
     return list;
@@ -104,14 +107,29 @@ export default function Profile() {
           setHorses([]);
         }
         try {
-          const bksRes = await api(`/api/users/${me.UserID}/bookings`);
-          const bks = Array.isArray(bksRes)
-            ? bksRes
-            : Array.isArray(bksRes?.data)
-              ? bksRes.data
-              : [];
-          setBookings(bks);
-        } catch {
+          const base = await api(`/api/users/${me.UserID}/bookings`);
+          const future = await api(`/api/users/${me.UserID}/bookings?futureOnly=true`);
+          console.info("[profile] bookings base", base);
+          console.info("[profile] bookings future", future);
+          const normalize = (v) =>
+            (Array.isArray(v) && v) ||
+            (Array.isArray(v?.data) && v.data) ||
+            (Array.isArray(v?.bookings) && v.bookings) ||
+            (Array.isArray(v?.results) && v.results) ||
+            [];
+          const combined = [...normalize(base), ...normalize(future)];
+          const deduped = [];
+          const seen = new Set();
+          combined.forEach((b) => {
+            const key = b.BookingID ?? b.id ?? `${b.Type || ""}-${b.ResourceID || ""}-${b.StartTime || ""}`;
+            if (key && seen.has(key)) return;
+            if (key) seen.add(key);
+            deduped.push(b);
+          });
+          console.info("[profile] bookings combined", deduped);
+          setBookings(deduped);
+        } catch (err) {
+          console.warn("[profile] bookings fetch failed", err);
           setBookings([]);
         }
       } catch (e) {
