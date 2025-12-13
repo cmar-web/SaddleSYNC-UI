@@ -13,6 +13,7 @@ export default function Payment() {
   const service = params.get("service") || "Service";
   const stableId = params.get("stableId");
   const serviceId = params.get("serviceId");
+  const slotId = params.get("slotId");
 
   const [cardName, setCardName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -42,6 +43,17 @@ export default function Payment() {
         }),
       });
       console.info("[payment] booking confirmed");
+      if (slotId) {
+        try {
+          await api(`${API_PREFIX}/stables/${stableId}/services/slots/${slotId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ Status: "cancelled" }),
+          });
+          console.info("[payment] slot marked unavailable", slotId);
+        } catch (slotErr) {
+          console.warn("[payment] slot status update failed (non-blocking)", slotErr);
+        }
+      }
       setMessageTone("success");
       setMessage("Payment submitted and booking confirmed.");
       const redirect = stableId ? `/stables/${stableId}` : "/profile";

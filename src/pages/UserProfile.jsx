@@ -47,13 +47,14 @@ export default function Profile() {
           b.ServiceName ||
           b.Name ||
           (b.Type ? `${(b.Type || "").charAt(0).toUpperCase() + (b.Type || "").slice(1)} booking` : "Booking");
+        const stableLabel = b.StableName || b.Location || "";
         const ts = tsRaw ? Date.parse(tsRaw) : null;
         return {
           id: b.BookingID ?? b.id,
           title,
           ts,
           dateLabel: ts ? new Date(ts).toLocaleString() : "Scheduled",
-          location: b.StableName || b.Location || "",
+          location: stableLabel || "Stable",
           type: b.Status,
         };
       })
@@ -103,8 +104,13 @@ export default function Profile() {
           setHorses([]);
         }
         try {
-          const bks = await api(`/api/users/${me.UserID}/bookings`);
-          setBookings(Array.isArray(bks) ? bks : []);
+          const bksRes = await api(`/api/users/${me.UserID}/bookings`);
+          const bks = Array.isArray(bksRes)
+            ? bksRes
+            : Array.isArray(bksRes?.data)
+              ? bksRes.data
+              : [];
+          setBookings(bks);
         } catch {
           setBookings([]);
         }

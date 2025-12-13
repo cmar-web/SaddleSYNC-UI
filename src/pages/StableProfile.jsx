@@ -56,7 +56,10 @@ export default function StableProfile() {
   const [bookingOpen, setBookingOpen] = useState({});
   const [newHorseForm, setNewHorseForm] = useState({});
   const [bookingLoading, setBookingLoading] = useState({});
+  const [riderEquipmentForm, setRiderEquipmentForm] = useState({});
+  const [selectedSlotCache, setSelectedSlotCache] = useState({});
   const [stableHorses, setStableHorses] = useState([]);
+  const [horsesError, setHorsesError] = useState("");
   const [userHorses, setUserHorses] = useState([]);
   const horseId = (h) => h?.HorseID ?? h?.Id ?? h?.id;
   const [equipment, setEquipment] = useState([]);
@@ -73,7 +76,20 @@ export default function StableProfile() {
     () =>
       (stableHorses || []).filter((h) => {
         if (!h) return false;
-        const flag = h.isPublic ?? h.IsPublic ?? h.is_public ?? h.is_visible ?? h.isVisible;
+        const flag =
+          h.IsPublic ??
+          h.isPublic ??
+          h.IsPublic ??
+          h.is_public ??
+          h.is_visible ??
+          h.isVisible ??
+          h.IsVisible ??
+          h.Public ??
+          h.public;
+        if (flag === undefined || flag === null) {
+          // If backend didn't send a visibility flag, assume public so horses still render
+          return true;
+        }
         if (typeof flag === "string") {
           const norm = flag.trim().toLowerCase();
           return norm === "true" || norm === "1" || norm === "yes";
@@ -124,8 +140,11 @@ export default function StableProfile() {
         try {
           const horses = await api(`${API_PREFIX}/stables/${id}/horses`);
           setStableHorses(Array.isArray(horses) ? horses : []);
-        } catch {
+          setHorsesError("");
+        } catch (err) {
+          console.error("[stable] failed to load horses", err);
           setStableHorses([]);
+          setHorsesError(err?.message || "Failed to load horses");
         }
         if (userId) {
           try {
@@ -159,14 +178,16 @@ export default function StableProfile() {
     });
   }, [isOwner, services]);
 
+  // Default horse selection: riding uses stable horses; boarding uses rider horses
   useEffect(() => {
-    if (!publicStableHorses.length || !services.length) return;
+    if (!services.length) return;
     setBookingForm((prev) => {
       const next = { ...prev };
       services.forEach((svc) => {
         if (!svc?.ServiceID) return;
+        const isBoarding = isBoardingService(svc);
         const current = prev[svc.ServiceID] || {};
-        if (!current.HorseID && publicStableHorses.length) {
+        if (!isBoarding && !current.HorseID && publicStableHorses.length) {
           const defaultHorse = horseId(publicStableHorses[0]);
           if (defaultHorse) {
             next[svc.ServiceID] = { ...current, HorseID: defaultHorse };
@@ -176,6 +197,25 @@ export default function StableProfile() {
       return next;
     });
   }, [publicStableHorses, services]);
+
+  useEffect(() => {
+    if (!services.length || !userHorses.length) return;
+    setBookingForm((prev) => {
+      const next = { ...prev };
+      services.forEach((svc) => {
+        if (!svc?.ServiceID) return;
+        const isBoarding = isBoardingService(svc);
+        const current = prev[svc.ServiceID] || {};
+        if (isBoarding && !current.HorseID) {
+          const defaultHorse = horseId(userHorses[0]);
+          if (defaultHorse) {
+            next[svc.ServiceID] = { ...current, HorseID: defaultHorse };
+          }
+        }
+      });
+      return next;
+    });
+  }, [userHorses, services]);
 
   function toggleOffer(value) {
     if (!isOwner) return;
@@ -282,8 +322,16 @@ export default function StableProfile() {
     }
   }
 
+  const isBoardingService = (svc) => {
+    const t = (svc?.Type || "").toLowerCase();
+    if (t === "boarding") return true;
+    // Fallback: very long durations are likely boarding ranges
+    if (!t && (svc?.DurationMinutes || 0) >= 1440) return true;
+    return false;
+  };
+
   const formatServiceDuration = (svc) => {
-    if (svc?.Type === "Boarding") {
+    if (isBoardingService(svc)) {
       const days = Math.max(1, Math.round((svc.DurationMinutes || 0) / 1440));
       return `${days} day${days === 1 ? "" : "s"}`;
     }
@@ -537,11 +585,11 @@ export default function StableProfile() {
     }
     const form = bookingForm[svc.ServiceID] || {};
     setError("");
+    const isBoarding = isBoardingService(svc);
     if (!form.SlotID) {
       setError("Please select an available time slot.");
       return;
     }
-    const isBoarding = (svc.Type || "").toLowerCase() === "boarding";
     if (isBoarding) {
       if (!userHorses.length) {
         setError("Add a horse to your profile to book boarding.");
@@ -549,6 +597,14 @@ export default function StableProfile() {
       }
       if (!form.HorseID) {
         setError("Please select your horse for boarding.");
+        return;
+      }
+      if (!form.BoardingStart || !form.BoardingEnd) {
+        setError("Select your boarding start and end dates.");
+        return;
+      }
+      if (new Date(form.BoardingEnd) < new Date(form.BoardingStart)) {
+        setError("Boarding end date must be after start date.");
         return;
       }
     } else {
@@ -561,7 +617,11 @@ export default function StableProfile() {
         return;
       }
     }
-    const selectedSlot = (slotsByService[svc.ServiceID] || []).find(sl => sl.SlotID === Number(form.SlotID));
+    const selectedSlot =
+      selectedSlotCache[svc.ServiceID] ||
+      (slotsByService[svc.ServiceID] || []).find(sl => sl.SlotID === Number(form.SlotID));
+    const boardingStartISO = form.BoardingStart ? new Date(form.BoardingStart).toISOString() : undefined;
+    const boardingEndISO = form.BoardingEnd ? new Date(form.BoardingEnd).toISOString() : undefined;
     const payload = {
       UserID: Number(userId),
       HorseID: form.HorseID ? Number(form.HorseID) : null,
@@ -569,7 +629,11 @@ export default function StableProfile() {
       Status: "pending",
       TotalPrice: svc.Price != null ? Number(svc.Price) : undefined,
       Notes: form.Notes?.trim() || undefined,
-      ScheduledFor: selectedSlot?.StartTime ? new Date(selectedSlot.StartTime).toISOString() : undefined,
+      ScheduledFor: isBoarding
+        ? boardingStartISO || (selectedSlot?.StartTime ? new Date(selectedSlot.StartTime).toISOString() : undefined)
+        : selectedSlot?.StartTime ? new Date(selectedSlot.StartTime).toISOString() : undefined,
+      StartDate: isBoarding ? boardingStartISO : undefined,
+      EndDate: isBoarding ? boardingEndISO : undefined,
     };
     Object.keys(payload).forEach((k) => {
       if (payload[k] === undefined) delete payload[k];
@@ -603,6 +667,24 @@ export default function StableProfile() {
           console.warn("[booking] slot status update failed (non-blocking)", slotErr);
         }
       }
+      // Optional: attach equipment for riding lessons (best-effort)
+      if (!isBoarding) {
+        const gear = riderEquipmentForm[svc.ServiceID];
+        if (gear?.EquipmentID) {
+          try {
+            const payloadEq = {
+              EquipmentID: Number(gear.EquipmentID),
+              Quantity: Math.max(1, parseInt(gear.Quantity || "1", 10)),
+            };
+            await api(`${API_PREFIX}/lessons/bookings/${created.BookingID}/equipment`, {
+              method: "POST",
+              body: JSON.stringify(payloadEq),
+            });
+          } catch (gearErr) {
+            console.warn("[booking] equipment attach failed (non-blocking)", gearErr);
+          }
+        }
+      }
       setBookingsByService(prev => ({
         ...prev,
         [svc.ServiceID]: [created, ...(prev[svc.ServiceID] || [])],
@@ -612,7 +694,7 @@ export default function StableProfile() {
         [svc.ServiceID]: { SlotID: "", Notes: "", HorseID: form.HorseID || "" },
       }));
       setBookingOpen(prev => ({ ...prev, [svc.ServiceID]: false }));
-      navigate(`/payment?bookingId=${created.BookingID}&amount=${svc.Price || 0}&service=${encodeURIComponent(svc.Name || "Service")}&stableId=${id}&serviceId=${svc.ServiceID}`);
+      navigate(`/payment?bookingId=${created.BookingID}&amount=${svc.Price || 0}&service=${encodeURIComponent(svc.Name || "Service")}&stableId=${id}&serviceId=${svc.ServiceID}&slotId=${payload.SlotID || ""}`);
     } catch (e) {
       console.error("[booking] create failed", e);
       setError(e.message || "Failed to create booking");
@@ -921,7 +1003,7 @@ export default function StableProfile() {
                       className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="1"
                       value={serviceForm.Price}
                       onChange={(e) => setServiceForm(f => ({ ...f, Price: e.target.value }))}
                       required
@@ -1331,9 +1413,11 @@ export default function StableProfile() {
                       {services
                         .filter(s => s.IsPublic !== false)
                         .map((svc) => {
+                          const isBoarding = isBoardingService(svc);
                           const availableSlots = (slotsByService[svc.ServiceID] || []).filter(sl => sl.Status === "available");
                           const form = bookingForm[svc.ServiceID] || {};
                           const open = bookingOpen[svc.ServiceID];
+                          const selectedSlot = selectedSlotCache[svc.ServiceID] || (slotsByService[svc.ServiceID] || []).find(sl => sl.SlotID === Number(form.SlotID));
                           return (
                             <div key={svc.ServiceID} className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 space-y-3">
                               <div className="flex items-start justify-between gap-3">
@@ -1375,7 +1459,10 @@ export default function StableProfile() {
                                         <button
                                           key={slot.SlotID}
                                           className={`px-3 py-2 rounded-lg border text-sm ${form.SlotID === slot.SlotID ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]" : "bg-white text-[hsl(var(--rich-brown))]"}`}
-                                          onClick={() => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), SlotID: slot.SlotID } }))}
+                                          onClick={() => {
+                                            setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), SlotID: slot.SlotID, BoardingStart: undefined, BoardingEnd: undefined } }));
+                                            setSelectedSlotCache(prev => ({ ...prev, [svc.ServiceID]: slot }));
+                                          }}
                                         >
                                           {formatDate(slot.StartTime)}
                                         </button>
@@ -1387,10 +1474,10 @@ export default function StableProfile() {
 
                                   <div className="grid md:grid-cols-2 gap-3">
                                     <div className="space-y-2">
-                                      {svc.Type?.toLowerCase() === "boarding" ? (
+                                      {isBoarding ? (
                                         <>
                                           <label className="text-sm text-[hsl(var(--muted-foreground))]">Select your horse</label>
-                                          {userHorses.length > 0 && (
+                                          {userHorses.length > 0 ? (
                                             <select
                                               className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
                                               value={form.HorseID || ""}
@@ -1406,6 +1493,8 @@ export default function StableProfile() {
                                                 );
                                               })}
                                             </select>
+                                          ) : (
+                                            <div className="text-sm text-[hsl(var(--muted-foreground))]">No horses on your profile yet.</div>
                                           )}
                                           <div className="space-y-1">
                                             <p className="text-xs text-[hsl(var(--muted-foreground))]">Need to add a horse for boarding?</p>
@@ -1434,6 +1523,32 @@ export default function StableProfile() {
                                               <Link className="text-xs text-[hsl(var(--primary))] underline" to="/createHorse">Manage horses</Link>
                                             </div>
                                           </div>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                                            <div className="space-y-1">
+                                              <label className="text-sm text-[hsl(var(--muted-foreground))]">Boarding start</label>
+                                              <input
+                                                className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 text-sm"
+                                                type="date"
+                                                disabled={!form.SlotID}
+                                                min={selectedSlot ? selectedSlot.StartTime?.slice(0, 10) : undefined}
+                                                max={selectedSlot ? selectedSlot.EndTime?.slice(0, 10) : undefined}
+                                                value={form.BoardingStart || ""}
+                                                onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), BoardingStart: e.target.value } }))}
+                                              />
+                                            </div>
+                                            <div className="space-y-1">
+                                              <label className="text-sm text-[hsl(var(--muted-foreground))]">Boarding end</label>
+                                              <input
+                                                className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 text-sm"
+                                                type="date"
+                                                disabled={!form.SlotID}
+                                                min={form.BoardingStart || (selectedSlot ? selectedSlot.StartTime?.slice(0, 10) : undefined)}
+                                                max={selectedSlot ? selectedSlot.EndTime?.slice(0, 10) : undefined}
+                                                value={form.BoardingEnd || ""}
+                                                onChange={(e) => setBookingForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), BoardingEnd: e.target.value } }))}
+                                              />
+                                            </div>
+                                          </div>
                                         </>
                                       ) : (
                                         <>
@@ -1457,6 +1572,35 @@ export default function StableProfile() {
                                             </select>
                                           )}
                                           <div className="text-xs text-[hsl(var(--muted-foreground))]">Lesson riders select from stable horses; bringing your own is disabled.</div>
+                                          <div className="space-y-1 pt-2">
+                                            <label className="text-sm text-[hsl(var(--muted-foreground))]">Equipment (optional)</label>
+                                            {equipment.length === 0 ? (
+                                              <div className="text-xs text-[hsl(var(--muted-foreground))]">No rental equipment listed.</div>
+                                            ) : (
+                                              <div className="grid grid-cols-1 sm:grid-cols-[2fr,1fr] gap-2">
+                                                <select
+                                                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 text-sm"
+                                                  value={riderEquipmentForm[svc.ServiceID]?.EquipmentID || ""}
+                                                  onChange={(e) => setRiderEquipmentForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), EquipmentID: e.target.value } }))}
+                                                >
+                                                  <option value="">Select item</option>
+                                                  {equipment.map(eq => (
+                                                    <option key={eq.EquipmentID} value={eq.EquipmentID}>
+                                                      {eq.Name} (${Number(eq.PricePerLesson || 0).toFixed(2)})
+                                                    </option>
+                                                  ))}
+                                                </select>
+                                                <input
+                                                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2 text-sm"
+                                                  type="number"
+                                                  min="1"
+                                                  placeholder="Qty"
+                                                  value={riderEquipmentForm[svc.ServiceID]?.Quantity || "1"}
+                                                  onChange={(e) => setRiderEquipmentForm(f => ({ ...f, [svc.ServiceID]: { ...(f[svc.ServiceID] || {}), Quantity: e.target.value } }))}
+                                                />
+                                              </div>
+                                            )}
+                                          </div>
                                         </>
                                       )}
                                     </div>
@@ -1577,7 +1721,7 @@ export default function StableProfile() {
               )}
             </div>
 
-            <div className="rounded-3xl bg-white shadow-card border border-[hsl(var(--border))] p-6 space-y-3">
+              <div className="rounded-3xl bg-white shadow-card border border-[hsl(var(--border))] p-6 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-[hsl(var(--rich-brown))]">Our Horses</h3>
                 {isOwner && (
@@ -1586,7 +1730,9 @@ export default function StableProfile() {
                   </Link>
                 )}
               </div>
-              {(isOwner ? stableHorses : publicStableHorses).length === 0 ? (
+              {horsesError ? (
+                <div className="text-[hsl(var(--destructive))] text-sm">{horsesError}</div>
+              ) : (isOwner ? stableHorses : publicStableHorses).length === 0 ? (
                 <div className="text-[hsl(var(--muted-foreground))]">No horses added yet.</div>
               ) : (
                 <ul className="space-y-2">
