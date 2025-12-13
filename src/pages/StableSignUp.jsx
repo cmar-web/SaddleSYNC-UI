@@ -1,8 +1,7 @@
-// src/pages/StableSignUp.jsx
 import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { getCurrentUser } from "../lib/auth";
-import "../styles/stableSignUp.css";
+import { api } from "../lib/api";
 
 const STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA",
@@ -10,31 +9,31 @@ const STATES = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
 ];
 const isEmail = (s) => /\S+@\S+\.\S+/.test(s || "");
+const OFFER_OPTIONS = ["Lessons", "Boarding"];
 
 export default function StableSignUp() {
-  const API = (import.meta.env.VITE_API_URL || "") + "/api/stables";
+  const API = "/api/stables";
   const navigate = useNavigate();
 
   const user = useMemo(() => getCurrentUser(), []);
   const userId = user?.UserID;
 
-  // gate if not logged in
   if (!userId) {
     return (
-      <section className="container auth">
-        <h1 className="auth-title">Register your stable</h1>
-        <div className="card" style={{ padding: "1rem" }}>
-          <p>You need to be logged in to create a stable.</p>
-          <p className="form-actions">
-            <Link className="btn-brown" to="/login">Log in</Link>
-            <Link className="btn btn-light" to="/userSignUp">Create an account</Link>
-          </p>
+      <section className="min-h-screen bg-[hsl(var(--background))] flex items-center justify-center px-4 py-12">
+        <div className="bg-white rounded-3xl shadow-elevated border border-[hsl(var(--border))] p-8 space-y-4 max-w-xl w-full text-center">
+          <h1 className="text-3xl font-serif text-[hsl(var(--rich-brown))]">Put your stable on SaddleSync</h1>
+          <p className="text-[hsl(var(--muted-foreground))]">Create a stable owner account to list your barn.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link className="px-4 py-2 rounded-xl border border-[hsl(var(--border))] text-[hsl(var(--rich-brown))]" to="/userSignUp">Create owner account</Link>
+            <Link className="px-4 py-2 rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]" to="/login">I already have an account</Link>
+          </div>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">Just browsing? <Link to="/search" className="text-[hsl(var(--primary))] font-semibold">Explore stables</Link>.</p>
         </div>
       </section>
     );
   }
 
-  // form fields
   const [stableName, setStableName] = useState("");
   const [phone, setPhone]           = useState("");
   const [address, setAddress]       = useState("");
@@ -42,19 +41,30 @@ export default function StableSignUp() {
   const [stateVal, setStateVal]     = useState("");
   const [zip, setZip]               = useState("");
   const [email, setEmail]           = useState(user?.Email || "");
+  const [offers, setOffers]         = useState([]);
 
   const [submitting, setSubmitting] = useState(false);
-  const [phase, setPhase] = useState(""); 
+  const [phase, setPhase] = useState("");
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
 
-  // helper: pretty joins zip5 and zip4
+  const zip5 = zip.trim().slice(0, 5);
+
   const formatZip = (zip5, zip4) => zip4 ? `${zip5}-${zip4}` : zip5;
+
+  function toggleOffer(value) {
+    setOffers(prev =>
+      prev.includes(value)
+        ? prev.filter(v => v !== value)
+        : [...prev, value]
+    );
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
+    setWarning("");
 
-    // matches controller validications
     if (!stableName.trim()) return setError("Stable name is required.");
     if (!address.trim())    return setError("Address is required.");
     if (!city.trim())       return setError("City is required.");
@@ -64,12 +74,19 @@ export default function StableSignUp() {
 
     setSubmitting(true);
 
+    let std = {
+      street1: address.trim(),
+      city: city.trim(),
+      state: stateVal.trim(),
+      zip5: zip.trim(),
+    };
+    let coords = null;
+    let validated = false;
+
     try {
-      //validate, standardiz, geocode (server hits usps and locationiq)
       setPhase("validating");
-      const validateRes = await fetch(`${API}/validate-address`, {
+      const validateData = await api(`${API}/validate-address`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           street1: address.trim(),
           city: city.trim(),
@@ -78,79 +95,74 @@ export default function StableSignUp() {
         }),
       });
 
-      const validateData = await validateRes.json().catch(() => ({}));
-      if (!validateRes.ok) {
-        if (validateRes.status === 422) {
-          throw new Error(validateData.error || "That address is invalid. Please check it.");
-        }
-        throw new Error(validateData.error || "Address validation failed.");
+      if (validateData?.address) {
+        std = validateData.address;
+        validated = true;
+      }
+      if (validateData?.coords) {
+        coords = validateData.coords;
       }
 
-      // use standardized values from server
-      const std = validateData.address; 
-      const coords = validateData.coords;
-
-      //create stable
       setPhase("creating");
       const createPayload = {
         StableName: stableName.trim(),
-        OwnerID: userId,
         PhoneNumber: phone || null,
         Address: `${std.street1}${std.street2 ? " " + std.street2 : ""}`,
         City: std.city,
         State: std.state,
-        Zipcode: formatZip(std.zip5, std.zip4),
+        Zipcode: formatZip(std.zip5 || zip5, std.zip4),
         Email: email.trim(),
+        Offers: offers.join(","),
       };
 
-      const r = await fetch(API, {
+      const created = await api(API, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-           Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,
-        },
-
         body: JSON.stringify(createPayload),
       });
 
-      let created;
-      if (!r.ok) {
-        let msg = "Create failed";
+      if (validated || coords) {
+        setPhase("saving");
         try {
-          const t = await r.text();
-          msg = t || msg;
-          try { msg = JSON.parse(t).error || msg; } catch {}
-        } catch {}
-        throw new Error(msg);
-      } else {
-        created = await r.json();
+          await api(`${API}/${created.StableID}/address`, {
+            method: "PUT",
+            body: JSON.stringify({ address: std, coords }),
+          });
+        } catch {
+          // non-blocking: stable already created
+          setWarning("Stable created, but address confirmation could not be saved.");
+        }
       }
 
-      setPhase("saving");
-      const saveRes = await fetch(`${API}/${created.StableID}/address`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: user?.Token ? `Bearer ${user.Token}` : undefined,  
-      },
-
-        body: JSON.stringify({ address: std, coords }),
-      });
-
-      if (!saveRes.ok) {
-        let msg = "Saving address failed";
-        try {
-          const t = await saveRes.text();
-          msg = (JSON.parse(t).error) || t || msg;
-        } catch {}
-        throw new Error(msg);
-      }
-
-      // go to stable profile page
       navigate(`/stables/${created.StableID}`, { replace: true });
 
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      if (!validated) {
+        // If validation fails (e.g., 422), try creating without confirmed address
+        try {
+          setWarning(err.message || "Address validation failed; using provided address.");
+          setPhase("creating");
+          const createPayload = {
+            StableName: stableName.trim(),
+            PhoneNumber: phone || null,
+            Address: address.trim(),
+            City: city.trim(),
+            State: stateVal.trim(),
+            Zipcode: zip5,
+            Email: email.trim(),
+            Offers: offers.join(","),
+          };
+          const created = await api(API, {
+            method: "POST",
+            body: JSON.stringify(createPayload),
+          });
+          navigate(`/stables/${created.StableID}`, { replace: true });
+          return;
+        } catch (createErr) {
+          setError(createErr.message || err.message || "Something went wrong");
+        }
+      } else {
+        setError(err.message || "Something went wrong");
+      }
     } finally {
       setPhase("");
       setSubmitting(false);
@@ -158,122 +170,157 @@ export default function StableSignUp() {
   }
 
   return (
-    <section className="container auth">
-      <h1 className="auth-title">Register your stable</h1>
-      <p className="auth-subtitle">Tell riders how to find you</p>
+    <section className="min-h-screen bg-[hsl(var(--background))] px-4 py-10">
+      <div className="container mx-auto max-w-4xl">
+        <div className="bg-white rounded-3xl shadow-elevated border border-[hsl(var(--border))] p-8 md:p-10 space-y-6">
+          <header className="space-y-2 text-center">
+            <p className="text-sm font-semibold text-[hsl(var(--primary))] uppercase tracking-wide">Register your stable</p>
+            <h1 className="text-3xl font-serif text-[hsl(var(--rich-brown))]">Tell riders how to find you</h1>
+            <p className="text-[hsl(var(--muted-foreground))]">Keep your contact details and offerings in one easy-to-update place.</p>
+          </header>
 
-      <form className="card form-card" onSubmit={onSubmit} noValidate>
-        <div className="form-grid">
+          {error && (
+            <div className="rounded-xl border border-[hsl(var(--destructive))] bg-[hsl(var(--destructive)/0.08)] text-[hsl(var(--destructive))] px-4 py-3 text-sm" role="alert">
+              {error}
+            </div>
+          )}
+          {warning && !error && (
+            <div className="rounded-xl border border-[hsl(var(--accent))] bg-[hsl(var(--accent)/0.08)] text-[hsl(var(--accent))] px-4 py-3 text-sm" role="alert">
+              {warning}
+            </div>
+          )}
 
-          <div className="form-row">
-            <label htmlFor="stableName" className="label">Stable name <span className="req">*</span></label>
-            <input
-              id="stableName"
-              className="input"
-              placeholder="Enter stable name..."
-              value={stableName}
-              onChange={(e) => setStableName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-row cols-2">
-            <div>
-              <label htmlFor="phone" className="label">Phone</label>
+          <form className="space-y-4" onSubmit={onSubmit} noValidate>
+            <div className="space-y-2">
+              <label htmlFor="stableName" className="text-sm text-[hsl(var(--muted-foreground))]">Stable name *</label>
               <input
-                id="phone"
-                className="input"
-                placeholder="Enter stable phone number..."
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                inputMode="tel"
+                id="stableName"
+                className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                placeholder="Enter stable name"
+                value={stableName}
+                onChange={(e) => setStableName(e.target.value)}
+                required
               />
             </div>
-            <div>
-              <label htmlFor="email" className="label">Email <span className="req">*</span></label>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="phone" className="text-sm text-[hsl(var(--muted-foreground))]">Phone</label>
+                <input
+                  id="phone"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                  placeholder="Enter stable phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  inputMode="tel"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm text-[hsl(var(--muted-foreground))]">Email *</label>
+                <input
+                  id="email"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                  type="email"
+                  placeholder="Enter stable email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-sm text-[hsl(var(--muted-foreground))]">Offers</span>
+              <div className="flex flex-wrap gap-2">
+                {OFFER_OPTIONS.map(opt => (
+                  <label key={opt} className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${
+                    offers.includes(opt)
+                      ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]"
+                      : "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))]"
+                  }`}>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={offers.includes(opt)}
+                      onChange={() => toggleOffer(opt)}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="address" className="text-sm text-[hsl(var(--muted-foreground))]">Address *</label>
               <input
-                id="email"
-                className="input"
-                type="email"
-                placeholder="Enter stable email..."
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="address"
+                className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                placeholder="Enter address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
                 required
-                autoComplete="email"
+                autoComplete="street-address"
               />
             </div>
-          </div>
 
-          <div className="form-row">
-            <label htmlFor="address" className="label">Address <span className="req">*</span></label>
-            <input
-              id="address"
-              className="input"
-              placeholder="Enter address..."
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-              autoComplete="street-address"
-            />
-          </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="city" className="text-sm text-[hsl(var(--muted-foreground))]">City *</label>
+                <input
+                  id="city"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                  autoComplete="address-level2"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="state" className="text-sm text-[hsl(var(--muted-foreground))]">State *</label>
+                <select
+                  id="state"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                  value={stateVal}
+                  onChange={(e) => setStateVal(e.target.value)}
+                  required
+                  autoComplete="address-level1"
+                >
+                  <option value="">Select</option>
+                  {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="zip" className="text-sm text-[hsl(var(--muted-foreground))]">Zip *</label>
+                <input
+                  id="zip"
+                  className="w-full rounded-xl border border-[hsl(var(--border))] px-3 py-2"
+                  placeholder="Zipcode"
+                  value={zip}
+                  onChange={(e) => setZip(e.target.value)}
+                  required
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                />
+              </div>
+            </div>
 
-          <div className="form-row cols-3">
-            <div>
-              <label htmlFor="city" className="label">City <span className="req">*</span></label>
-              <input
-                id="city"
-                className="input"
-                placeholder="Enter city..."
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                required
-                autoComplete="address-level2"
-              />
+            <div className="pt-2">
+              <button className="w-full rounded-xl bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold py-3 shadow-soft" type="submit" disabled={submitting}>
+                {phase === "validating" ? "Validating..." :
+                 phase === "creating"   ? "Creating..."   :
+                 phase === "saving"     ? "Saving address..." :
+                 "Create stable"}
+              </button>
             </div>
-            <div>
-              <label htmlFor="state" className="label">State <span className="req">*</span></label>
-              <select
-                id="state"
-                className="input select"
-                value={stateVal}
-                onChange={(e) => setStateVal(e.target.value)}
-                required
-                autoComplete="address-level1"
-              >
-                <option value="">Select</option>
-                {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="zip" className="label">Zip <span className="req">*</span></label>
-              <input
-                id="zip"
-                className="input"
-                placeholder="Enter zipcode..."
-                value={zip}
-                onChange={(e) => setZip(e.target.value)}
-                required
-                inputMode="numeric"
-                autoComplete="postal-code"
-              />
-            </div>
-          </div>
+          </form>
 
-          <div className="form-actions">
-            <button className="btn-brown" type="submit" disabled={submitting}>
-              {phase === "validating" ? "Validating…" :
-               phase === "creating"   ? "Creating…"   :
-               phase === "saving"     ? "Saving address…" :
-               "Create stable"}
-            </button>
-            {error && <div className="form-error" role="alert">{error}</div>}
-          </div>
+          <p className="text-center text-sm text-[hsl(var(--muted-foreground))]">
+            Changed your mind? <Link to="/" className="text-[hsl(var(--primary))] font-semibold">Go back home</Link>.
+          </p>
         </div>
-      </form>
-
-      <p className="form-note">
-        Changed your mind? <Link to="/">Go back home</Link>.
-      </p>
+      </div>
     </section>
   );
 }

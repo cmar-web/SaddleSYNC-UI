@@ -1,73 +1,400 @@
-import React from "react";
+// src/pages/CreateHorse.jsx
+import { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { getCurrentUser } from "../lib/auth";
+import { api } from "../lib/api";
 import "../styles/createHorse.css";
 
+const API_PREFIX = "/api";
+
 export default function CreateHorse() {
+  const navigate = useNavigate();
+  const { stableId } = useParams();
+
+  const user = useMemo(() => {
+    try {
+      return getCurrentUser() || null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const [form, setForm] = useState({
+    name: "",
+    birthday: "",
+    age: "",
+    temperament: "",
+    breed: "",
+    notes: "",
+    sex: "",
+  });
+
+  const [likes, setLikes] = useState([]);
+  const [dislikes, setDislikes] = useState([]);
+  const [likeInput, setLikeInput] = useState("");
+  const [dislikeInput, setDislikeInput] = useState("");
+
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  if (!user) {
+    return (
+      <main className="page page--narrow">
+        <h1>Add a Horse</h1>
+        <p>Please sign in to add a horse.</p>
+      </main>
+    );
+  }
+
+  function updateField(field, value) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function addLike() {
+    const trimmed = likeInput.trim();
+    if (!trimmed) return;
+    if (!likes.includes(trimmed)) {
+      setLikes((prev) => [...prev, trimmed]);
+    }
+    setLikeInput("");
+  }
+
+  function addDislike() {
+    const trimmed = dislikeInput.trim();
+    if (!trimmed) return;
+    if (!dislikes.includes(trimmed)) {
+      setDislikes((prev) => [...prev, trimmed]);
+    }
+    setDislikeInput("");
+  }
+
+  function removeLike(item) {
+    setLikes((prev) => prev.filter((v) => v !== item));
+  }
+
+  function removeDislike(item) {
+    setDislikes((prev) => prev.filter((v) => v !== item));
+  }
+
+  function handleImageChange(e) {
+    const file = e.target.files && e.target.files[0];
+    setImageFile(file || null);
+    if (file) {
+      setImagePreview(URL.createObjectURL(file));
+    } else {
+      setImagePreview("");
+    }
+  }
+
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+
+    const trimmedName = form.name.trim();
+    if (!trimmedName) {
+      setError("Horse name is required.");
+      return;
+    }
+
+    if (!form.birthday) {
+      setError("Birthday is required.");
+      return;
+    }
+
+    const ownerId = user?.UserID;
+    if (!ownerId || ownerId <= 0) {
+      setError("Missing owner. Please sign in again.");
+      return;
+    }
+
+    const payload = {
+      Name: trimmedName,
+      DOB: form.birthday,
+      Temperament: form.temperament.trim() || null,
+      Sex: form.sex ? form.sex.toLowerCase() : null,
+      OwnerID: ownerId,
+    };
+
+    setSubmitting(true);
+    try {
+      const path = stableId
+        ? `${API_PREFIX}/stables/${stableId}/horses`
+        : `${API_PREFIX}/users/${user.UserID}/horses`;
+
+      await api(path, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      if (stableId) {
+        navigate(`/stables/${stableId}/horses`);
+      } else {
+        navigate("/profile");
+      }
+    } catch (err) {
+      setError(err?.message || "Unable to create horse.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+
   return (
-    <main className="horse-create">
-      <div className="horse-grid">
+    <main className="add-horse-container">
+      <div className="add-horse-inner">
+        <h1>Add a Horse</h1>
+        {stableId && <p className="form-subtitle">Adding to stable #{stableId}</p>}
 
-        <section className="panel photo-panel">
-          <div className="photo-drop">
-            <input type="file" id="photo-input" accept="image/*" />
-            <label htmlFor="photo-input" className="photo-prompt">
-              Add a photo
-            </label>
-          </div>
-        </section>
+        {error && <div className="form-error">{error}</div>}
 
-        <section className="panel">
-          <label className="label" htmlFor="temperament">Temperament</label>
-          <input id="temperament" className="input" placeholder="Ex: timid, social, friendly..." />
-        </section>
+        <form className="card form horse-form" onSubmit={handleSubmit}>
+          <div className="horse-layout">
+            <div className="horse-left">
+              <section className="form-section">
+                <h2 className="section-title">Photo</h2>
 
-        <section className="panel list-panel">
-          <div className="list-head">
-            <span>Likes</span>
-          </div>
-          <div className="list-body">
-            <input className="input" placeholder="Ex: apples" />
-          </div>
-          <div className="list-actions">
-            <button type="button" className="btn icon add">+</button>
-            <button type="button" className="btn icon del">🗑</button>
-          </div>
-        </section>
+                <div className="image-upload">
+                  <div className="image-drop">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Horse preview" />
+                    ) : (
+                      <span className="image-placeholder-text">
+                        Add a photo to help riders recognize this horse
+                      </span>
+                    )}
+                  </div>
 
-        <section className="panel list-panel">
-          <div className="list-head">
-            <span>Dislikes</span>
-          </div>
-          <div className="list-body">
-            <input className="input" placeholder="Ex: loud noises" />
-          </div>
-          <div className="list-actions">
-            <button type="button" className="btn icon add">+</button>
-            <button type="button" className="btn icon del">🗑</button>
-          </div>
-        </section>
+                  <label
+                    htmlFor="horse-image"
+                    className="custom-upload-button"
+                  >
+                    Choose photo
+                  </label>
+                  <input
+                    id="horse-image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden-file-input"
+                  />
 
-        <section className="panel">
-          <label className="label" htmlFor="name">Hi, my name is...</label>
-          <input id="name" className="input" placeholder="Enter horse’s name..." />
-          <label className="label mt" htmlFor="age">I am...</label>
-          <input id="age" className="input" placeholder="years old" />
-        </section>
+                  <p className="field-help">JPG or PNG, up to 10MB.</p>
+                </div>
+              </section>
 
-        <section className="panel">
-          <label className="label" htmlFor="birthday">My birthday is...</label>
-          <div className="date-row">
-            <input id="birthday" className="input" type="date" />
+              <section className="form-section">
+                <div className="field">
+                  <label htmlFor="horse-name">My name is...</label>
+                  <input
+                    id="horse-name"
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => updateField("name", e.target.value)}
+                    required
+                    placeholder="Enter horse's name..."
+                  />
+                </div>
+              </section>
+            </div>
+
+            <div className="horse-right">
+              <section className="form-section">
+                <h2 className="section-title">Basic info</h2>
+
+                <div className="field-inline">
+                  <div className="field">
+                    <label htmlFor="horse-birthday">My Birthday is...</label>
+                    <input
+                      id="horse-birthday"
+                      type="date"
+                      value={form.birthday}
+                      onChange={(e) => updateField("birthday", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="horse-age">I am </label>
+                    <input
+                      id="horse-age"
+                      type="number"
+                      min="0"
+                      value={form.age}
+                      onChange={(e) => updateField("age", e.target.value)}
+                      placeholder="years old..."
+                    />
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="horse-breed">I am a...</label>
+                  <input
+                    id="horse-breed"
+                    type="text"
+                    value={form.breed}
+                    onChange={(e) => updateField("breed", e.target.value)}
+                    placeholder="Enter breed..."
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="horse-sex">Sex</label>
+                  <select
+                    id="horse-sex"
+                    value={form.sex}
+                    onChange={(e) => updateField("sex", e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    <option value="mare">Mare</option>
+                    <option value="gelding">Gelding</option>
+                    <option value="stallion">Stallion</option>
+                    <option value="filly">Filly</option>
+                    <option value="colt">Colt</option>
+                  </select>
+                </div>
+              </section>
+
+              <section className="form-section">
+                <h2 className="section-title">Personality</h2>
+
+                <div className="field">
+                  <label htmlFor="horse-temperament">Temperament</label>
+                  <input
+                    id="horse-temperament"
+                    type="text"
+                    placeholder="Ex: Gentle, bold, etc..."
+                    value={form.temperament}
+                    onChange={(e) =>
+                      updateField("temperament", e.target.value)
+                    }
+                  />
+                </div>
+              </section>
+
+              <section className="form-section form-section--split">
+                <div className="form-subsection">
+                  <h3 className="section-subtitle">Likes</h3>
+                  <div className="field">
+                    <div className="tag-input-row">
+                      <input
+                        type="text"
+                        value={likeInput}
+                        onChange={(e) => setLikeInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addLike();
+                          }
+                        }}
+                        placeholder="Ex: Carrots, trail rides, etc."
+                      />
+                      <button
+                        type="button"
+                        className="custom-upload-button"
+                        onClick={addLike}
+                      >
+                        +
+                      </button>
+                    </div>
+                    {likes.length > 0 && (
+                      <ul className="tag-list">
+                        {likes.map((item) => (
+                          <li key={item} className="tag-pill">
+                            <span>{item}</span>
+                            <button
+                              type="button"
+                              className="tag-remove"
+                              onClick={() => removeLike(item)}
+                            >
+                              x
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-subsection">
+                  <h3 className="section-subtitle">Dislikes</h3>
+                  <div className="field">
+                    <div className="tag-input-row">
+                      <input
+                        type="text"
+                        value={dislikeInput}
+                        onChange={(e) => setDislikeInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addDislike();
+                          }
+                        }}
+                        placeholder="Ex: Loud noises, fly spray, etc."
+                      />
+                      <button
+                        type="button"
+                        className="custom-upload-button"
+                        onClick={addDislike}
+                      >
+                        +
+                      </button>
+                    </div>
+                    {dislikes.length > 0 && (
+                      <ul className="tag-list">
+                        {dislikes.map((item) => (
+                          <li key={item} className="tag-pill">
+                            <span>{item}</span>
+                            <button
+                              type="button"
+                              className="tag-remove"
+                              onClick={() => removeDislike(item)}
+                            >
+                              x
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              <section className="form-section">
+                <h2 className="section-title">Notes</h2>
+                <div className="field field--wide">
+                  <textarea
+                    id="horse-notes"
+                    rows={4}
+                    value={form.notes}
+                    onChange={(e) => updateField("notes", e.target.value)}
+                    placeholder="Any additional information you'd want people to know about this horse..."
+                  />
+                </div>
+              </section>
+            </div>
           </div>
-        </section>
 
-        <section className="panel notes-panel">
-          <label className="label" htmlFor="notes">Any special accommodations or notes</label>
-          <textarea id="notes" className="textarea" rows="4" placeholder="Ex: Needs meds at 9:00 am before grazing" />
-        </section>
-
-        <div className="actions">
-          <button className="btn-brown">Add horse profile</button>
-        </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => navigate(-1)}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={submitting}
+            >
+              {submitting ? "Saving..." : "Save horse"}
+            </button>
+          </div>
+        </form>
       </div>
     </main>
   );
