@@ -34,24 +34,29 @@ export default function Profile() {
     const list = (bookings || [])
       .filter((b) => {
         const status = (b.Status || "").toString().toLowerCase();
-        const ts = b.ScheduledFor ? Date.parse(b.ScheduledFor) : null;
-        return (status === "pending" || status === "confirmed") && ts && ts >= now;
+        return status === "pending" || status === "confirmed";
       })
-      .map((b) => ({
-        id: b.BookingID ?? b.id,
-        title: b.ServiceName || b.Name || "Booking",
-        ts: Date.parse(b.ScheduledFor),
-        dateLabel: b.ScheduledFor,
-        location: b.StableName || b.Location || "",
-        type: b.Status,
-      }));
-    return list
-      .sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0))
-      .slice(0, 5)
-      .map((b) => ({
-        ...b,
-        dateLabel: b.ts ? new Date(b.ts).toLocaleString() : "Scheduled",
-      }));
+      .map((b) => {
+        const tsRaw =
+          b.ScheduledFor ||
+          b.StartTime ||
+          b.SlotStartTime ||
+          b.CreatedAt ||
+          null;
+        const ts = tsRaw ? Date.parse(tsRaw) : null;
+        return {
+          id: b.BookingID ?? b.id,
+          title: b.ServiceName || b.Name || "Booking",
+          ts,
+          dateLabel: ts ? new Date(ts).toLocaleString() : "Scheduled",
+          location: b.StableName || b.Location || "",
+          type: b.Status,
+        };
+      })
+      .filter((b) => !b.ts || b.ts >= now) // keep future or undated
+      .sort((a, b) => (a.ts ?? Infinity) - (b.ts ?? Infinity))
+      .slice(0, 5);
+    return list;
   }, [bookings]);
 
   const initials = useMemo(() => {
