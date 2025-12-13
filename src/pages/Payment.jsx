@@ -20,26 +20,35 @@ export default function Payment() {
   const [cvc, setCvc] = useState("");
   const [zip, setZip] = useState("");
   const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState("info"); // info | success | error
   const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
+    if (!bookingId || !stableId || !serviceId) {
+      setMessageTone("error");
+      setMessage("Missing booking details. Please return and start the booking again.");
+      return;
+    }
     setMessage("");
     setSubmitting(true);
     try {
-      if (stableId && serviceId && bookingId) {
-        await api(`${API_PREFIX}/stables/${stableId}/services/bookings/${bookingId}`, {
-          method: "PATCH",
-          body: JSON.stringify({
-            Status: "confirmed",
-            PaidAt: new Date().toISOString(),
-          }),
-        });
-      }
-      setMessage("Payment submitted and lesson confirmed.");
+      console.info("[payment] confirming booking", { bookingId, stableId, serviceId });
+      await api(`${API_PREFIX}/stables/${stableId}/services/bookings/${bookingId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          Status: "confirmed",
+          PaidAt: new Date().toISOString(),
+        }),
+      });
+      console.info("[payment] booking confirmed");
+      setMessageTone("success");
+      setMessage("Payment submitted and booking confirmed.");
       const redirect = stableId ? `/stables/${stableId}` : "/profile";
       setTimeout(() => navigate(redirect), 800);
     } catch (err) {
+      console.error("Payment confirmation failed", err);
+      setMessageTone("error");
       setMessage(err?.message || "Unable to confirm booking.");
     } finally {
       setSubmitting(false);
@@ -65,7 +74,13 @@ export default function Payment() {
           </div>
 
           {message && (
-            <div className="rounded-xl border border-[hsl(var(--accent))] bg-[hsl(var(--accent)/0.08)] text-[hsl(var(--accent))] px-4 py-3 text-sm">
+            <div
+              className={`rounded-xl px-4 py-3 text-sm border ${
+                messageTone === "error"
+                  ? "border-[hsl(var(--destructive))] text-[hsl(var(--destructive))] bg-[hsl(var(--destructive)/0.08)]"
+                  : "border-[hsl(var(--accent))] text-[hsl(var(--accent))] bg-[hsl(var(--accent)/0.08)]"
+              }`}
+            >
               {message}
             </div>
           )}

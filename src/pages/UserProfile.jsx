@@ -43,10 +43,14 @@ export default function Profile() {
           b.SlotStartTime ||
           b.CreatedAt ||
           null;
+        const title =
+          b.ServiceName ||
+          b.Name ||
+          (b.Type ? `${(b.Type || "").charAt(0).toUpperCase() + (b.Type || "").slice(1)} booking` : "Booking");
         const ts = tsRaw ? Date.parse(tsRaw) : null;
         return {
           id: b.BookingID ?? b.id,
-          title: b.ServiceName || b.Name || "Booking",
+          title,
           ts,
           dateLabel: ts ? new Date(ts).toLocaleString() : "Scheduled",
           location: b.StableName || b.Location || "",

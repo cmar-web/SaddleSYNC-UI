@@ -575,10 +575,34 @@ export default function StableProfile() {
       if (payload[k] === undefined) delete payload[k];
     });
     try {
+      console.info("[booking] creating booking", {
+        serviceId: svc.ServiceID,
+        stableId: id,
+        slotId: payload.SlotID,
+        horseId: payload.HorseID,
+        isBoarding,
+      });
       const created = await api(`${API_PREFIX}/stables/${id}/services/${svc.ServiceID}/bookings`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
+      console.info("[booking] booking created", created);
+      // Hide the slot locally so riders don't double-book it in this view
+      if (payload.SlotID) {
+        setSlotsByService(prev => ({
+          ...prev,
+          [svc.ServiceID]: (prev[svc.ServiceID] || []).filter(sl => sl.SlotID !== payload.SlotID),
+        }));
+        // Best-effort: mark slot unavailable in backend so reloads don't show it
+        try {
+          await api(`${API_PREFIX}/stables/${id}/services/slots/${payload.SlotID}`, {
+            method: "PATCH",
+            body: JSON.stringify({ Status: "cancelled" }),
+          });
+        } catch (slotErr) {
+          console.warn("[booking] slot status update failed (non-blocking)", slotErr);
+        }
+      }
       setBookingsByService(prev => ({
         ...prev,
         [svc.ServiceID]: [created, ...(prev[svc.ServiceID] || [])],
@@ -587,8 +611,10 @@ export default function StableProfile() {
         ...prev,
         [svc.ServiceID]: { SlotID: "", Notes: "", HorseID: form.HorseID || "" },
       }));
+      setBookingOpen(prev => ({ ...prev, [svc.ServiceID]: false }));
       navigate(`/payment?bookingId=${created.BookingID}&amount=${svc.Price || 0}&service=${encodeURIComponent(svc.Name || "Service")}&stableId=${id}&serviceId=${svc.ServiceID}`);
     } catch (e) {
+      console.error("[booking] create failed", e);
       setError(e.message || "Failed to create booking");
     }
   }
